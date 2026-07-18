@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { BrandLogo } from '@/components/brand/BrandLogo'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import type { Profile } from '@/types'
@@ -25,8 +26,7 @@ export function Navbar({ profile }: NavbarProps) {
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl">🦊</span>
-          <span className="text-xl font-bold text-indigo-600">FoxyCare</span>
+          <BrandLogo className="h-10 w-auto" priority />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
