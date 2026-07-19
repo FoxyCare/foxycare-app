@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { BrandLogo } from '@/components/brand/BrandLogo'
+import { BrandLogo, BrandWordmark } from '@/components/brand/BrandLogo'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import type { User } from '@/types'
@@ -23,43 +23,38 @@ export function Navbar({ profile }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 bg-cream">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <BrandLogo className="h-10 w-auto" priority />
+          <BrandLogo className="h-9 w-9" priority />
+          <BrandWordmark className="text-lg font-bold" />
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-8 md:flex">
           {profile ? (
             <>
-              <Link
-                href="/dashboard"
-                className="text-sm font-medium text-gray-600 hover:text-indigo-600"
-              >
-                Dashboard
+              <Link href="/dashboard" className="text-sm font-medium text-gray-700 hover:text-brand-600">
+                Panel
               </Link>
               {profile.role === 'parent' && (
-                <Link
-                  href="/search"
-                  className="text-sm font-medium text-gray-600 hover:text-indigo-600"
-                >
+                <Link href="/search" className="text-sm font-medium text-gray-700 hover:text-brand-600">
                   Znajdź nianię
                 </Link>
               )}
-              <Link
-                href="/chat"
-                className="text-sm font-medium text-gray-600 hover:text-indigo-600"
-              >
+              <Link href="/chat" className="text-sm font-medium text-gray-700 hover:text-brand-600">
                 Wiadomości
               </Link>
             </>
           ) : (
             <>
-              <Link
-                href="/"
-                className="text-sm font-medium text-gray-600 hover:text-indigo-600"
-              >
-                Home
+              <Link href="/search" className="text-sm font-medium text-gray-700 hover:text-brand-600">
+                Znajdź nianię
+              </Link>
+              <Link href="/register?role=nanny" className="text-sm font-medium text-gray-700 hover:text-brand-600">
+                Zostań nianią
+              </Link>
+              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-brand-600">
+                Zaloguj się
               </Link>
             </>
           )}
@@ -76,16 +71,11 @@ export function Navbar({ profile }: NavbarProps) {
               </Button>
             </div>
           ) : (
-            <>
-              <Link href="/login">
-                <Button variant="outline" size="sm">
-                  Sign in
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm">Get started</Button>
-              </Link>
-            </>
+            <Link href="/register" className="hidden md:block">
+              <Button size="sm" className="rounded-full">
+                Zarejestruj się
+              </Button>
+            </Link>
           )}
         </div>
       </div>
