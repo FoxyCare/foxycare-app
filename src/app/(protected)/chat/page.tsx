@@ -63,7 +63,8 @@ function ChatPageInner() {
           filter: `conversation_id=eq.${selectedConversation.id}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message])
+          const incoming = payload.new as Message
+          setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]))
         }
       )
       .subscribe()
@@ -85,11 +86,16 @@ function ChatPageInner() {
     const content = newMessage.trim()
     setNewMessage('')
 
-    await fetch('/api/messages', {
+    const res = await fetch('/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conversation_id: selectedConversation.id, content }),
     })
+
+    if (res.ok) {
+      const sent: Message = await res.json()
+      setMessages((prev) => (prev.some((m) => m.id === sent.id) ? prev : [...prev, sent]))
+    }
 
     setIsSending(false)
   }
@@ -172,7 +178,7 @@ function ChatPageInner() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Napisz wiadomość..."
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                   <Button type="submit" size="sm" isLoading={isSending} disabled={!newMessage.trim()}>
                     Wyślij
