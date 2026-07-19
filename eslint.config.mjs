@@ -13,6 +13,11 @@ export default tseslint.config(
       // React-Compiler-era heuristic flags it as an error; keep it visible as a
       // warning rather than disabling it outright.
       'react-hooks/set-state-in-effect': 'warn',
+      // Server Components computing a per-request timestamp (e.g. "5 minutes
+      // ago" for an online-users query) is correct — it must be re-evaluated
+      // on every request, not memoized. The rule can't distinguish that from
+      // a genuinely impure client render, so keep it visible as a warning.
+      'react-hooks/purity': 'warn',
     },
   },
   {

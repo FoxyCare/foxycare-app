@@ -29,5 +29,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  return { supabaseResponse, user }
+  if (user) {
+    // Catches a session that was already active when the admin banned the
+    // account — LoginForm only blocks the ban at sign-in time, so an
+    // existing session needs its own check to be kicked out promptly.
+    const { data: profile } = await supabase
+      .from('users')
+      .select('is_banned')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.is_banned) {
+      await supabase.auth.signOut()
+      return { supabaseResponse, user: null, banned: true }
+    }
+  }
+
+  return { supabaseResponse, user, banned: false }
 }

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { translateAuthError, BANNED_ACCOUNT_MESSAGE } from '@/lib/utils'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -15,7 +16,9 @@ export default function LoginForm() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    searchParams.get('banned') ? BANNED_ACCOUNT_MESSAGE : null
+  )
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -25,13 +28,27 @@ export default function LoginForm() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        setError(error.message)
+        setError(translateAuthError(error.message))
+        return
+      }
+
+      // Credentials are valid at this point — Supabase Auth itself doesn't
+      // know about bans, so check our own flag and undo the sign-in if set.
+      const { data: profile } = await supabase
+        .from('users')
+        .select('is_banned')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profile?.is_banned) {
+        await supabase.auth.signOut()
+        setError(BANNED_ACCOUNT_MESSAGE)
         return
       }
 
@@ -45,12 +62,12 @@ export default function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-center text-2xl">Welcome back</CardTitle>
+        <CardTitle className="text-center text-2xl">Witaj ponownie</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
-            label="Email address"
+            label="Adres e-mail"
             type="email"
             autoComplete="email"
             required
@@ -58,7 +75,7 @@ export default function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <Input
-            label="Password"
+            label="Hasło"
             type="password"
             autoComplete="current-password"
             required
@@ -73,14 +90,14 @@ export default function LoginForm() {
           )}
 
           <Button type="submit" isLoading={isLoading} className="mt-2 w-full">
-            Sign in
+            Zaloguj się
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          Don&apos;t have an account?{' '}
+          Nie masz konta?{' '}
           <Link href="/register" className="font-medium text-brand-600 hover:underline">
-            Sign up
+            Zarejestruj się
           </Link>
         </p>
       </CardContent>

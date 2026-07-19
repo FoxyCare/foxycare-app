@@ -42,6 +42,10 @@ const AUTH_ERROR_TRANSLATIONS: Record<string, string> = {
     'Ze względów bezpieczeństwa możesz spróbować ponownie dopiero za chwilę',
 }
 
+export const BANNED_ACCOUNT_MESSAGE =
+  'Twoje konto zostało zablokowane przez administratora. Skontaktuj się z pomocą, jeśli uważasz, że to pomyłka.'
+
 export function translateAuthError(message: string): string {
+  if (/banned/i.test(message)) return BANNED_ACCOUNT_MESSAGE
   return AUTH_ERROR_TRANSLATIONS[message] ?? message
 }

@@ -31,7 +31,11 @@ export function Navbar({ profile }: NavbarProps) {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
-          {profile ? (
+          {profile ? profile.role === 'admin' ? (
+            <Link href="/admin" className="text-sm font-medium text-gray-700 hover:text-brand-600">
+              Panel Administratora
+            </Link>
+          ) : (
             <>
               <Link href="/dashboard" className="text-sm font-medium text-gray-700 hover:text-brand-600">
                 Panel
@@ -63,7 +67,7 @@ export function Navbar({ profile }: NavbarProps) {
         <div className="flex items-center gap-3">
           {profile ? (
             <div className="flex items-center gap-3">
-              <Link href="/profile">
+              <Link href={profile.role === 'admin' ? '/admin' : '/profile'}>
                 <Avatar name={profile.full_name} size="sm" />
               </Link>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
