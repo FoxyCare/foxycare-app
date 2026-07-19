@@ -6,7 +6,7 @@ const AUTH_ROUTES = ['/login', '/register', '/onboarding']
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const { supabaseResponse, user } = await updateSession(request)
+  const { supabaseResponse, user, banned } = await updateSession(request)
 
   // Allow public routes — nanny profile pages (/nanny/[id]) require a
   // session, so they are intentionally not in this list.
@@ -16,6 +16,13 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     return supabaseResponse
+  }
+
+  // A session that was active when the admin banned the account gets
+  // signed out above (see updateSession) — send it to /login with an
+  // explanation instead of a bare "please sign in" redirect.
+  if (banned) {
+    return NextResponse.redirect(new URL('/login?banned=1', request.url))
   }
 
   // Protected routes – require authentication

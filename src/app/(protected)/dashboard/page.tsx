@@ -20,6 +20,8 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single<User>()
 
+  if (userRow?.role === 'admin') redirect('/admin')
+
   const isNanny = userRow?.role === 'nanny'
 
   const { data: roleProfile } = await supabase

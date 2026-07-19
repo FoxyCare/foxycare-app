@@ -39,7 +39,9 @@ foxycare-app/
 │   │   ├── (auth)/                 # /login, /register, /onboarding
 │   │   ├── (protected)/            # /dashboard, /profile, /chat — require a session
 │   │   ├── search/                 # /search — public, browsable without an account
-│   │   ├── api/                    # route handlers: ads, conversations, messages, profile
+│   │   ├── nanny/[id]/             # /nanny/[id] — public-facing profile, requires a session
+│   │   ├── admin/                  # /admin, /admin/nannies, /admin/parents — role: admin only
+│   │   ├── api/                    # route handlers: ads, conversations, messages, profile, admin/*
 │   │   ├── layout.tsx, page.tsx    # root layout + landing page
 │   │   ├── error.tsx, not-found.tsx
 │   │   └── globals.css
@@ -47,13 +49,16 @@ foxycare-app/
 │   │   ├── ui/                     # Button, Input, Card, Badge, Avatar, icons
 │   │   ├── layout/                 # Navbar, Footer
 │   │   ├── brand/                  # BrandLogo, BrandWordmark
-│   │   └── AdCard.tsx              # ad listing card (client component, image fallback)
+│   │   ├── admin/                  # AdminUserList (shared by /admin/nannies and /admin/parents)
+│   │   ├── AdCard.tsx              # ad listing card (client component, image fallback)
+│   │   └── MessageNannyButton.tsx  # shared "message this nanny" CTA (search, nanny profile)
 │   ├── hooks/                      # useUser, useProfile
 │   ├── lib/
-│   │   ├── supabase/               # client.ts, server.ts, middleware.ts
+│   │   ├── supabase/               # client.ts, server.ts, middleware.ts, requireAdmin.ts
+│   │   ├── labels.ts               # shared JOB_TYPE_LABEL / AGE_RANGE_LABEL maps
 │   │   └── utils/
 │   ├── types/                      # mirrors the foxycare-db schema
-│   └── proxy.ts                    # Next.js 16 middleware (session refresh + route protection)
+│   └── proxy.ts                    # Next.js 16 middleware (session refresh + route protection + ban check)
 ├── tailwind.config.ts               # `brand` (terracotta) + `cream` color scale, sourced from the logo
 ├── .env.example
 └── .devcontainer/
@@ -74,6 +79,8 @@ foxycare-app/
 | `/search` | **public** | Browse and filter ads — no account needed, matches the public `ads`/`nanny_profiles` RLS policies. Messaging a nanny from here prompts login. |
 | `/profile` | authenticated | Edit profile; nannies also manage their own ads here |
 | `/chat` | authenticated | Conversations and messages |
+| `/nanny/[id]` | authenticated | Public-facing nanny profile (view + message) — requires a session |
+| `/admin`, `/admin/nannies`, `/admin/parents` | admin only | Stats overview; filterable nanny/parent lists with ban/unban |
 
 ### API (route handlers)
 
@@ -84,8 +91,11 @@ foxycare-app/
 | `/api/profile` | `GET`, `PUT` | Current user's role-specific profile (`parent_profiles`/`nanny_profiles`) |
 | `/api/conversations` | `GET`, `POST` | List the caller's conversations; find-or-create one with another user |
 | `/api/messages` | `GET`, `POST` | Messages within a conversation |
+| `/api/admin/stats` | `GET` | Total/online/banned user counts (admin only) |
+| `/api/admin/users` | `GET` | Filterable nanny/parent list (admin only) |
+| `/api/admin/users/[id]/ban`, `/unban` | `POST` | Sets/clears `users.is_banned` (admin only) — enforced entirely in app code, see [Environment Variables](#environment-variables) |
 
-All data access goes through Supabase with Row Level Security as the actual security boundary — the API routes are a convenience layer, not the source of truth for authorization.
+All data access goes through Supabase with Row Level Security as the actual security boundary — the API routes are a convenience layer, not the source of truth for authorization. The one exception is `users.is_banned`: RLS only guards *who* can flip it (admins, via `users_update_admin`), the actual sign-in block is app code (`LoginForm` + `proxy.ts`), not a database-level constraint — see [Environment Variables](#environment-variables) for why.
 
 ---
 
@@ -97,8 +107,9 @@ Copy `.env.example` to `.env.local` and fill in real values from your Supabase p
 | ---------- | ---------- | -------------- |
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Public anon/publishable key — safe for client-side use, RLS enforces access |
-| `SUPABASE_SERVICE_ROLE_KEY` | no | Only needed for server-side calls that must bypass RLS (none currently) — keep secret if set |
 | `NEXT_PUBLIC_APP_URL` | yes | Base URL of the app (`http://localhost:3000` locally) |
+
+No `SUPABASE_SERVICE_ROLE_KEY` is used anywhere in this app. Admin actions (e.g. banning) go through the normal anon-key client, gated by the `users.role = 'admin'` check in `requireAdmin()` and enforced by RLS — deliberately avoiding a bypass-everything key in the deployment.
 
 ---
 
@@ -130,7 +141,7 @@ npx tsc --noEmit   # type-check
 This is a zero-config Next.js app — no `vercel.json` needed. Steps:
 
 1. Import the `FoxyCare/foxycare-app` GitHub repo into a new Vercel project.
-2. In the Vercel project's **Settings → Environment Variables**, set the four variables listed [above](#environment-variables) for both **Production** and **Preview** — PR preview deployments need them too, or their build fails with `@supabase/ssr: Your project's URL and API key are required`. If a variable is marked **Sensitive** in the Vercel UI, it cannot also target **Development**; that's expected, keep using `.env.local` for local dev (`vercel env pull` won't fetch Sensitive values).
+2. In the Vercel project's **Settings → Environment Variables**, set the three variables listed [above](#environment-variables) for both **Production** and **Preview** — PR preview deployments need them too, or their build fails with `@supabase/ssr: Your project's URL and API key are required`. If a variable is marked **Sensitive** in the Vercel UI, it cannot also target **Development**; that's expected, keep using `.env.local` for local dev (`vercel env pull` won't fetch Sensitive values).
 3. Vercel auto-detects Next.js and deploys on every push to `main`, with preview deployments for pull requests.
 4. `NEXT_PUBLIC_APP_URL` isn't read anywhere in the code yet — it's reserved for when absolute URLs are needed (emails, OG tags). Set it to the deployed domain once known; a placeholder is harmless until then.
 

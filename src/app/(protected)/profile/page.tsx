@@ -53,6 +53,11 @@ export default function ProfilePage() {
         .eq('id', authUser.id)
         .single<User>()
 
+      if (userRow?.role === 'admin') {
+        router.push('/admin')
+        return
+      }
+
       if (userRow) {
         setUser(userRow)
 

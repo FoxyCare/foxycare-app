@@ -1,4 +1,4 @@
-export type UserRole = 'parent' | 'nanny'
+export type UserRole = 'parent' | 'nanny' | 'admin'
 export type JobType = 'full_time' | 'part_time'
 export type ChildrenAgeRange = '0_3' | '3_6' | '6_plus'
 
@@ -7,6 +7,9 @@ export interface User {
   email: string
   full_name: string
   role: UserRole
+  is_banned: boolean
+  banned_at?: string
+  last_seen_at?: string
   created_at: string
   updated_at: string
 }
@@ -83,4 +86,16 @@ export interface AdFilters {
   max_experience?: number
   children_age_range?: ChildrenAgeRange
   job_type?: JobType
+}
+
+export interface AdminUserFilters {
+  name?: string
+  location?: string
+  min_experience?: number
+  children_age_range?: ChildrenAgeRange
+  job_type?: JobType
+}
+
+export interface AdminUserRow extends User {
+  profile?: (ParentProfile & Partial<NannyProfile>) | null
 }
