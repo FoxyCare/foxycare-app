@@ -27,3 +27,21 @@ export function getInitials(name: string): string {
     .toUpperCase()
     .slice(0, 2)
 }
+
+const AUTH_ERROR_TRANSLATIONS: Record<string, string> = {
+  'User already registered': 'Użytkownik o tym adresie e-mail już istnieje',
+  'Password should be at least 6 characters': 'Hasło musi mieć co najmniej 6 znaków',
+  'Password should be at least 8 characters': 'Hasło musi mieć co najmniej 8 znaków',
+  'Unable to validate email address: invalid format': 'Nieprawidłowy format adresu e-mail',
+  'Signup requires a valid password': 'Podaj prawidłowe hasło',
+  'Invalid login credentials': 'Nieprawidłowy e-mail lub hasło',
+  'Email not confirmed': 'E-mail nie został potwierdzony',
+  'Email rate limit exceeded': 'Zbyt wiele prób. Spróbuj ponownie za chwilę',
+  'Email link is invalid or has expired': 'Link wygasł lub jest nieprawidłowy',
+  'For security purposes, you can only request this after some time.':
+    'Ze względów bezpieczeństwa możesz spróbować ponownie dopiero za chwilę',
+}
+
+export function translateAuthError(message: string): string {
+  return AUTH_ERROR_TRANSLATIONS[message] ?? message
+}

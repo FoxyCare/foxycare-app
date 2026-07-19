@@ -59,7 +59,8 @@ export default function SearchPage() {
       .select('*, images:ad_images(*), nanny:users!nanny_id(id, full_name)')
       .order('created_at', { ascending: false })
 
-    if (filters.location) query = query.ilike('location', `%${filters.location}%`)
+    const location = filters.location?.trim()
+    if (location) query = query.ilike('location', `%${location}%`)
     if (filters.job_type) query = query.eq('job_type', filters.job_type)
     if (filters.children_age_range) query = query.eq('children_age_range', filters.children_age_range)
     if (filters.min_experience !== undefined) query = query.gte('experience_years', filters.min_experience)
@@ -70,9 +71,12 @@ export default function SearchPage() {
     setIsLoading(false)
   }, [filters])
 
+  // Only fetch on mount and on explicit "Szukaj" clicks (see Button below) —
+  // not on every filter keystroke, to avoid firing a request per character.
   useEffect(() => {
     fetchAds()
-  }, [fetchAds])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="flex min-h-screen flex-col">

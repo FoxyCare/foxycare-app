@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { translateAuthError } from '@/lib/utils'
 import type { UserRole } from '@/types'
 
 export default function RegisterForm() {
@@ -37,7 +38,7 @@ export default function RegisterForm() {
       })
 
       if (error) {
-        setError(error.message)
+        setError(translateAuthError(error.message))
         return
       }
 
@@ -51,7 +52,7 @@ export default function RegisterForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-center text-2xl">Create your account</CardTitle>
+        <CardTitle className="text-center text-2xl">Utwórz konto</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Role selector */}
@@ -67,14 +68,14 @@ export default function RegisterForm() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {r === 'parent' ? '👨‍👩‍👧 Parent' : '🤝 Nanny'}
+              {r === 'parent' ? '👨‍👩‍👧 Rodzic' : '🤝 Niania'}
             </button>
           ))}
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
-            label="Full name"
+            label="Imię i nazwisko"
             type="text"
             autoComplete="name"
             required
@@ -82,7 +83,7 @@ export default function RegisterForm() {
             onChange={(e) => setFullName(e.target.value)}
           />
           <Input
-            label="Email address"
+            label="Adres e-mail"
             type="email"
             autoComplete="email"
             required
@@ -90,14 +91,14 @@ export default function RegisterForm() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <Input
-            label="Password"
+            label="Hasło"
             type="password"
             autoComplete="new-password"
             required
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            helperText="Minimum 8 characters"
+            helperText="Minimum 8 znaków"
           />
 
           {error && (
@@ -107,14 +108,14 @@ export default function RegisterForm() {
           )}
 
           <Button type="submit" isLoading={isLoading} className="mt-2 w-full">
-            Create account
+            Zarejestruj się
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
+          Masz już konto?{' '}
           <Link href="/login" className="font-medium text-brand-600 hover:underline">
-            Sign in
+            Zaloguj się
           </Link>
         </p>
       </CardContent>
