@@ -13,16 +13,19 @@ const STEPS = [
     Icon: PersonIcon,
     title: 'Zarejestruj się',
     desc: 'Załóż konto i stwórz swój profil.',
+    href: '/register',
   },
   {
     Icon: SearchIcon,
     title: 'Znajdź nianię',
     desc: 'Przeglądaj profile niań w Twojej okolicy.',
+    href: '/search',
   },
   {
     Icon: PeopleIcon,
     title: 'Umów spotkanie',
     desc: 'Skontaktuj się i porównaj nianie osobiście.',
+    href: '/search',
   },
 ]
 
@@ -63,14 +66,18 @@ export default async function HomePage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl font-bold text-gray-900">Jak to działa</h2>
             <div className="mt-10 grid gap-6 sm:grid-cols-3">
-              {STEPS.map(({ Icon, title, desc }) => (
-                <div key={title} className="rounded-2xl bg-cream p-6">
+              {STEPS.map(({ Icon, title, desc, href }) => (
+                <Link
+                  key={title}
+                  href={href}
+                  className="block rounded-2xl bg-cream p-6 transition-shadow hover:shadow-md"
+                >
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-brand-600">
                     <Icon className="h-6 w-6" />
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-gray-900">{title}</h3>
                   <p className="mt-1 text-sm text-gray-600">{desc}</p>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

@@ -16,6 +16,22 @@ updates:
       supabase:
         patterns:
           - "@supabase/*"
+    ignore:
+      # eslint-plugin-react/import/jsx-a11y (pulled in by eslint-config-next)
+      # only support eslint ^9 — a v10 bump fails `npm install` on Vercel.
+      # Re-allow once eslint-config-next raises its peer range.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      # Tailwind v4 is a CSS-first config rewrite (different PostCSS plugin,
+      # no tailwind.config.ts in the current form) — needs a deliberate,
+      # reviewed migration, not an automatic bump.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 is the new native (Go-ported) compiler preview, a huge
+      # jump from 5.x — needs manual verification against ts-jest/Next/Tailwind
+      # config before adopting.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "devcontainers"
     directory: "/"
