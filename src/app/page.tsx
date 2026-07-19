@@ -2,74 +2,101 @@ import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
 import { Navbar } from '@/components/layout/Navbar'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent } from '@/components/ui/Card'
+import { BrandLogo, BrandWordmark } from '@/components/brand/BrandLogo'
+import { PersonIcon, SearchIcon, PeopleIcon } from '@/components/ui/icons'
+import { AdCard } from '@/components/AdCard'
+import { createClient } from '@/lib/supabase/server'
+import type { Ad } from '@/types'
 
-export default function HomePage() {
+const STEPS = [
+  {
+    Icon: PersonIcon,
+    title: 'Zarejestruj się',
+    desc: 'Załóż konto i stwórz swój profil.',
+  },
+  {
+    Icon: SearchIcon,
+    title: 'Znajdź nianię',
+    desc: 'Przeglądaj profile niań w Twojej okolicy.',
+  },
+  {
+    Icon: PeopleIcon,
+    title: 'Umów spotkanie',
+    desc: 'Skontaktuj się i porównaj nianie osobiście.',
+  },
+]
+
+export default async function HomePage() {
+  const supabase = await createClient()
+  const { data: ads } = await supabase
+    .from('ads')
+    .select('*, images:ad_images(*), nanny:users!nanny_id(id, full_name)')
+    .order('created_at', { ascending: false })
+    .limit(3)
+    .returns<Ad[]>()
+
   return (
     <>
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="bg-gradient-to-br from-indigo-50 to-white py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-                Znajdź idealną{' '}
-                <span className="text-indigo-600">nianię</span>
-              </h1>
-              <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-                FoxyCare łączy rodziny z ogłoszeniami niań w Twojej okolicy.
-                Przeglądaj, filtruj i napisz bezpośrednio.
+        <section className="bg-cream">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-20">
+            <div>
+              <BrandLogo className="h-32 w-32" priority />
+              <BrandWordmark className="mt-4 block text-4xl font-extrabold tracking-tight sm:text-5xl" />
+              <p className="mt-6 text-xl font-medium text-gray-700 sm:text-2xl">
+                Zaufana opieka i spokój na co dzień.
               </p>
-              <div className="mt-10 flex items-center justify-center gap-4">
-                <Link href="/search">
-                  <Button size="lg">Znajdź nianię</Button>
-                </Link>
-                <Link href="/register?role=nanny">
-                  <Button variant="outline" size="lg">
-                    Dołącz jako niania
-                  </Button>
-                </Link>
-              </div>
+              <Link href="/search" className="mt-8 inline-block">
+                <Button size="lg" className="rounded-full px-8">
+                  Znajdź nianię
+                </Button>
+              </Link>
+            </div>
+            <div className="aspect-[4/3] overflow-hidden rounded-3xl bg-gradient-to-br from-brand-200 via-brand-300 to-brand-500 lg:aspect-[5/4]" />
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="bg-white py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-gray-900">Jak to działa</h2>
+            <div className="mt-10 grid gap-6 sm:grid-cols-3">
+              {STEPS.map(({ Icon, title, desc }) => (
+                <div key={title} className="rounded-2xl bg-cream p-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900">{title}</h3>
+                  <p className="mt-1 text-sm text-gray-600">{desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Features */}
-        <section className="py-20">
+        {/* Featured ads */}
+        <section className="bg-cream py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-center text-3xl font-bold text-gray-900">
-              Jak działa FoxyCare
+              Znajdź idealną nianię
             </h2>
-            <div className="mt-12 grid gap-8 sm:grid-cols-3">
-              {[
-                {
-                  icon: '🔍',
-                  title: 'Szukaj i przeglądaj',
-                  desc: 'Filtruj ogłoszenia niań po lokalizacji, doświadczeniu, typie pracy i wieku dzieci.',
-                },
-                {
-                  icon: '💬',
-                  title: 'Napisz bezpośrednio',
-                  desc: 'Wyślij wiadomość, żeby omówić szczegóły i ustalić warunki współpracy.',
-                },
-                {
-                  icon: '📝',
-                  title: 'Dodaj ogłoszenie',
-                  desc: 'Niania publikuje ofertę z doświadczeniem, lokalizacją i opisem — za darmo.',
-                },
-              ].map((item) => (
-                <Card key={item.title} className="text-center">
-                  <CardContent className="flex flex-col items-center gap-4 pt-8">
-                    <span className="text-5xl">{item.icon}</span>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-600">{item.desc}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {!ads || ads.length === 0 ? (
+              <p className="mt-8 text-center text-gray-500">
+                Jeszcze nikt nie dodał ogłoszenia —{' '}
+                <Link href="/register?role=nanny" className="text-brand-600 hover:underline">
+                  bądź pierwszą nianią
+                </Link>
+                .
+              </p>
+            ) : (
+              <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {ads.map((ad) => (
+                  <AdCard key={ad.id} ad={ad} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>

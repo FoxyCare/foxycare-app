@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "==> Enabling pnpm via corepack"
-corepack enable
-corepack prepare pnpm@latest --activate
-
 echo "==> Installing PostgreSQL client tools"
 sudo apt-get update -y
 sudo apt-get install -y --no-install-recommends postgresql-client
@@ -20,12 +16,15 @@ if ! command -v supabase >/dev/null 2>&1; then
 fi
 supabase --version
 
+echo "==> Installing Vercel Claude Code plugin"
+npx --yes plugins add vercel/vercel-plugin -y || echo "  (skipped: plugins installer unavailable)"
+
 echo "==> Installing project dependencies"
-pnpm install
+npm install
 
 if [ ! -f .env.local ] && [ -f .env.example ]; then
   echo "==> Creating .env.local from .env.example"
   cp .env.example .env.local
 fi
 
-echo "✅ FoxyCare app dev container is ready. Run 'pnpm dev' to start Next.js."
+echo "✅ FoxyCare app dev container is ready. Run 'npm run dev' to start Next.js."

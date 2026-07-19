@@ -82,7 +82,7 @@ export default async function DashboardPage() {
             {!ads || ads.length === 0 ? (
               <p className="text-sm text-gray-500">
                 Nie masz jeszcze żadnych ogłoszeń.{' '}
-                <Link href="/profile" className="text-orange-600 hover:underline">
+                <Link href="/profile" className="text-brand-600 hover:underline">
                   Dodaj pierwsze
                 </Link>
                 .
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
           <CardContent>
             <p className="text-sm text-gray-500">
               Przeglądaj i filtruj ogłoszenia niań w{' '}
-              <Link href="/search" className="text-orange-600 hover:underline">
+              <Link href="/search" className="text-brand-600 hover:underline">
                 wyszukiwarce
               </Link>
               .

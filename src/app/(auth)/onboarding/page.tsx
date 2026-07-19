@@ -104,7 +104,7 @@ export default function OnboardingPage() {
             <div
               key={s}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i <= step ? 'bg-indigo-600' : 'bg-gray-200'
+                i <= step ? 'bg-brand-600' : 'bg-gray-200'
               }`}
             />
           ))}
@@ -134,7 +134,7 @@ export default function OnboardingPage() {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Opis</label>
               <textarea
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 rows={4}
                 value={form.description}
                 onChange={(e) => update('description', e.target.value)}
