@@ -1,0 +1,34 @@
+{
+  "name": "FoxyCare App (Next.js)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "forwardPorts": [3000, 54321, 54322, 54323, 54324],
+  "portsAttributes": {
+    "3000": { "label": "Next.js dev server", "onAutoForward": "notify" },
+    "54321": { "label": "Supabase API" },
+    "54322": { "label": "Supabase DB (Postgres)" },
+    "54323": { "label": "Supabase Studio" },
+    "54324": { "label": "Inbucket (test emails)" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "supabase.vscode-supabase-extension",
+        "github.copilot",
+        "github.copilot-chat"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  },
+  "remoteUser": "node"
+}
