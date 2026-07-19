@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
+import { Button } from '@/components/ui/Button'
 import type { Ad, NannyProfile, ParentProfile, User } from '@/types'
 
 export default async function DashboardPage() {
@@ -44,16 +45,21 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-4">
-        <Avatar src={roleProfile?.avatar_url} name={userRow?.full_name} size="lg" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Witaj, {userRow?.full_name?.split(' ')[0] ?? 'tam'}!
-          </h1>
-          <p className="text-gray-500 capitalize">
-            {isNanny ? 'Konto niani' : 'Konto rodzica'}
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Avatar src={roleProfile?.avatar_url} name={userRow?.full_name} size="lg" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Witaj, {userRow?.full_name?.split(' ')[0] ?? 'tam'}!
+            </h1>
+            <p className="text-gray-500 capitalize">
+              {isNanny ? 'Konto niani' : 'Konto rodzica'}
+            </p>
+          </div>
         </div>
+        <Link href="/profile">
+          <Button variant="outline">Edytuj profil</Button>
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

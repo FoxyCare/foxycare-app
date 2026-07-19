@@ -8,7 +8,8 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const { supabaseResponse, user } = await updateSession(request)
 
-  // Allow public routes
+  // Allow public routes — nanny profile pages (/nanny/[id]) require a
+  // session, so they are intentionally not in this list.
   if (PUBLIC_ROUTES.includes(pathname)) {
     // Redirect authenticated users away from auth pages
     if (user && AUTH_ROUTES.includes(pathname)) {

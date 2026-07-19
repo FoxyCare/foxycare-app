@@ -13,7 +13,7 @@ export function AdCard({ ad }: { ad: Ad }) {
 
   return (
     <Link
-      href="/search"
+      href={`/nanny/${ad.nanny_id}`}
       className="group block overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-brand-200 to-brand-400">
