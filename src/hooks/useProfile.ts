@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile } from '@/types'
+import type { User, ParentProfile, NannyProfile } from '@/types'
 
 export function useProfile(userId?: string) {
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [roleProfile, setRoleProfile] = useState<ParentProfile | NannyProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -16,17 +17,37 @@ export function useProfile(userId?: string) {
     }
 
     const supabase = createClient()
-    supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-      .then(({ data, error }) => {
-        if (error) setError(error.message)
-        else setProfile(data as Profile)
+
+    async function load() {
+      const { data: userRow, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (userError) {
+        setError(userError.message)
         setIsLoading(false)
-      })
+        return
+      }
+
+      setUser(userRow as User)
+
+      const profileTable = userRow.role === 'nanny' ? 'nanny_profiles' : 'parent_profiles'
+      const { data: profileRow, error: profileError } = await supabase
+        .from(profileTable)
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (profileError) setError(profileError.message)
+      else setRoleProfile(profileRow as ParentProfile | NannyProfile | null)
+
+      setIsLoading(false)
+    }
+
+    load()
   }, [userId])
 
-  return { profile, isLoading, error }
+  return { user, roleProfile, isLoading, error }
 }

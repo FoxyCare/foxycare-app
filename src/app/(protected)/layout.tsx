@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import type { Profile } from '@/types'
+import type { User } from '@/types'
 
 export default async function ProtectedLayout({
   children,
@@ -20,14 +20,14 @@ export default async function ProtectedLayout({
   }
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('id', user.id)
     .single()
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar profile={profile as Profile | null} />
+      <Navbar profile={profile as User | null} />
       <main className="flex-1 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {children}

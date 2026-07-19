@@ -6,10 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
-import type { Profile } from '@/types'
+import type { User } from '@/types'
 
 interface NavbarProps {
-  profile?: Profile | null
+  profile?: User | null
 }
 
 export function Navbar({ profile }: NavbarProps) {
@@ -43,20 +43,14 @@ export function Navbar({ profile }: NavbarProps) {
                   href="/search"
                   className="text-sm font-medium text-gray-600 hover:text-indigo-600"
                 >
-                  Find Nannies
+                  Znajdź nianię
                 </Link>
               )}
-              <Link
-                href="/booking"
-                className="text-sm font-medium text-gray-600 hover:text-indigo-600"
-              >
-                Bookings
-              </Link>
               <Link
                 href="/chat"
                 className="text-sm font-medium text-gray-600 hover:text-indigo-600"
               >
-                Messages
+                Wiadomości
               </Link>
             </>
           ) : (
@@ -75,14 +69,10 @@ export function Navbar({ profile }: NavbarProps) {
           {profile ? (
             <div className="flex items-center gap-3">
               <Link href="/profile">
-                <Avatar
-                  src={profile.avatar_url}
-                  name={profile.full_name}
-                  size="sm"
-                />
+                <Avatar name={profile.full_name} size="sm" />
               </Link>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                Sign out
+                Wyloguj
               </Button>
             </div>
           ) : (
