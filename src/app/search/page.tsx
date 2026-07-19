@@ -1,55 +1,28 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/hooks/useUser'
 import { useProfile } from '@/hooks/useProfile'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
+import { MessageNannyButton } from '@/components/MessageNannyButton'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
+import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
 import type { Ad, AdFilters } from '@/types'
 
-const JOB_TYPE_LABEL: Record<string, string> = {
-  full_time: 'Stała',
-  part_time: 'Dorywcza',
-}
-
-const AGE_RANGE_LABEL: Record<string, string> = {
-  '0_3': '0-3 lata',
-  '3_6': '3-6 lat',
-  '6_plus': '6+ lat',
-}
-
 export default function SearchPage() {
-  const router = useRouter()
   const { user: authUser } = useUser()
   const { user: profileUser } = useProfile(authUser?.id)
   const [ads, setAds] = useState<Ad[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [filters, setFilters] = useState<AdFilters>({})
-
-  const messageNanny = useCallback(
-    async (nannyId: string) => {
-      if (!authUser) {
-        router.push('/login?redirectTo=/search')
-        return
-      }
-      const res = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ other_user_id: nannyId }),
-      })
-      const conversation = await res.json()
-      if (res.ok) router.push(`/chat?conversation=${conversation.id}`)
-    },
-    [authUser, router]
-  )
+  const [filters, setFilters] = useState<AdFilters>({ min_experience: 0 })
 
   const fetchAds = useCallback(async () => {
     setIsLoading(true)
@@ -166,7 +139,7 @@ export default function SearchPage() {
               {ads.map((ad) => (
                 <Card key={ad.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
+                    <Link href={`/nanny/${ad.nanny_id}`} className="flex items-start gap-3 hover:opacity-80">
                       <Avatar name={ad.nanny?.full_name} size="lg" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900 truncate">{ad.title}</p>
@@ -184,14 +157,12 @@ export default function SearchPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                     {ad.description && (
                       <p className="mt-3 text-sm text-gray-600 line-clamp-2">{ad.description}</p>
                     )}
                     <div className="mt-4">
-                      <Button size="sm" className="w-full" onClick={() => messageNanny(ad.nanny_id)}>
-                        Napisz wiadomość
-                      </Button>
+                      <MessageNannyButton nannyId={ad.nanny_id} size="sm" className="w-full" />
                     </div>
                   </CardContent>
                 </Card>

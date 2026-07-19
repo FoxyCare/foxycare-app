@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
 import type { Ad, NannyProfile, ParentProfile, User } from '@/types'
 
 type RoleProfile = Partial<NannyProfile & ParentProfile>
@@ -168,6 +169,48 @@ export default function ProfilePage() {
                       }))
                     }
                   />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">Typ pracy</label>
+                      <select
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        value={roleProfile.job_type ?? ''}
+                        onChange={(e) =>
+                          setRoleProfile((p) => ({
+                            ...p,
+                            job_type: (e.target.value || undefined) as NannyProfile['job_type'],
+                          }))
+                        }
+                      >
+                        <option value="">Nie wybrano</option>
+                        {Object.entries(JOB_TYPE_LABEL).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">Wiek dzieci</label>
+                      <select
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        value={roleProfile.children_age_range ?? ''}
+                        onChange={(e) =>
+                          setRoleProfile((p) => ({
+                            ...p,
+                            children_age_range: (e.target.value || undefined) as NannyProfile['children_age_range'],
+                          }))
+                        }
+                      >
+                        <option value="">Nie wybrano</option>
+                        {Object.entries(AGE_RANGE_LABEL).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-gray-700">Opis</label>
                     <textarea

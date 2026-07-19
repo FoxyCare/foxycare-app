@@ -6,7 +6,7 @@ import { BrandLogo, BrandWordmark } from '@/components/brand/BrandLogo'
 import { PersonIcon, SearchIcon, PeopleIcon } from '@/components/ui/icons'
 import { AdCard } from '@/components/AdCard'
 import { createClient } from '@/lib/supabase/server'
-import type { Ad } from '@/types'
+import type { Ad, User } from '@/types'
 
 const STEPS = [
   {
@@ -31,6 +31,15 @@ const STEPS = [
 
 export default async function HomePage() {
   const supabase = await createClient()
+
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser()
+
+  const profile = authUser
+    ? (await supabase.from('users').select('*').eq('id', authUser.id).single()).data
+    : null
+
   const { data: ads } = await supabase
     .from('ads')
     .select('*, images:ad_images(*), nanny:users!nanny_id(id, full_name)')
@@ -40,7 +49,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar profile={profile as User | null} />
       <main>
         {/* Hero */}
         <section className="bg-cream">
