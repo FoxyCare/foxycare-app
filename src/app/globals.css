@@ -7,12 +7,12 @@
   --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* No dark theme: every component in this app hardcodes light-mode Tailwind
+   classes (bg-white, bg-cream, text-gray-900, ...). Letting body.color
+   follow prefers-color-scheme here — without a matching dark UI — made any
+   text relying on inherited color (native <select>/<input>/<textarea>
+   without an explicit text-* class) render near-white on white in dark
+   mode. Fix light-mode variables unconditionally instead. */
 
 body {
   color: var(--foreground);

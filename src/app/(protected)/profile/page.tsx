@@ -171,7 +171,7 @@ export default function ProfilePage() {
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-gray-700">Opis</label>
                     <textarea
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                       rows={4}
                       value={roleProfile.description ?? ''}
                       onChange={(e) => setRoleProfile((p) => ({ ...p, description: e.target.value }))}
