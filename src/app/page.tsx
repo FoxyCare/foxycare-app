@@ -14,20 +14,20 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-                Find your perfect{' '}
-                <span className="text-indigo-600">nanny</span>
+                Znajdź idealną{' '}
+                <span className="text-indigo-600">nianię</span>
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-                FoxyCare connects families with trusted, verified nannies.
-                Browse profiles, check reviews, and book in minutes.
+                FoxyCare łączy rodziny z ogłoszeniami niań w Twojej okolicy.
+                Przeglądaj, filtruj i napisz bezpośrednio.
               </p>
               <div className="mt-10 flex items-center justify-center gap-4">
                 <Link href="/search">
-                  <Button size="lg">Find a Nanny</Button>
+                  <Button size="lg">Znajdź nianię</Button>
                 </Link>
                 <Link href="/register?role=nanny">
                   <Button variant="outline" size="lg">
-                    Join as a Nanny
+                    Dołącz jako niania
                   </Button>
                 </Link>
               </div>
@@ -39,24 +39,24 @@ export default function HomePage() {
         <section className="py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-center text-3xl font-bold text-gray-900">
-              How FoxyCare works
+              Jak działa FoxyCare
             </h2>
             <div className="mt-12 grid gap-8 sm:grid-cols-3">
               {[
                 {
                   icon: '🔍',
-                  title: 'Search & Browse',
-                  desc: 'Filter nannies by location, experience, rate, and availability.',
+                  title: 'Szukaj i przeglądaj',
+                  desc: 'Filtruj ogłoszenia niań po lokalizacji, doświadczeniu, typie pracy i wieku dzieci.',
                 },
                 {
                   icon: '💬',
-                  title: 'Chat Directly',
-                  desc: 'Message nannies directly to discuss your needs before booking.',
+                  title: 'Napisz bezpośrednio',
+                  desc: 'Wyślij wiadomość, żeby omówić szczegóły i ustalić warunki współpracy.',
                 },
                 {
-                  icon: '📅',
-                  title: 'Book with Confidence',
-                  desc: 'Secure online booking with transparent pricing and reviews.',
+                  icon: '📝',
+                  title: 'Dodaj ogłoszenie',
+                  desc: 'Niania publikuje ofertę z doświadczeniem, lokalizacją i opisem — za darmo.',
                 },
               ].map((item) => (
                 <Card key={item.title} className="text-center">

@@ -13,15 +13,22 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('conversations')
-    .select('*')
-    .contains('participant_ids', [user.id])
-    .order('updated_at', { ascending: false })
+    .select(
+      '*, user1:users!user1_id(id, full_name), user2:users!user2_id(id, full_name)'
+    )
+    .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+    .order('last_message_at', { ascending: false, nullsFirst: false })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  const conversations = data.map((c) => ({
+    ...c,
+    other_user: c.user1_id === user.id ? c.user2 : c.user1,
+  }))
+
+  return NextResponse.json(conversations)
 }
 
 export async function POST(request: Request) {
@@ -38,10 +45,7 @@ export async function POST(request: Request) {
   const { other_user_id } = body
 
   if (!other_user_id) {
-    return NextResponse.json(
-      { error: 'other_user_id is required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'other_user_id is required' }, { status: 400 })
   }
 
   if (other_user_id === user.id) {
@@ -51,23 +55,23 @@ export async function POST(request: Request) {
     )
   }
 
-  // Check if conversation already exists
+  // conversations.user1_id < user2_id is enforced by a DB constraint
+  const [user1Id, user2Id] = [user.id, other_user_id].sort()
+
   const { data: existing } = await supabase
     .from('conversations')
     .select('*')
-    .contains('participant_ids', [user.id, other_user_id])
-    .single()
+    .eq('user1_id', user1Id)
+    .eq('user2_id', user2Id)
+    .maybeSingle()
 
   if (existing) {
     return NextResponse.json(existing)
   }
 
-  // Create new conversation
   const { data, error } = await supabase
     .from('conversations')
-    .insert({
-      participant_ids: [user.id, other_user_id],
-    })
+    .insert({ user1_id: user1Id, user2_id: user2Id })
     .select()
     .single()
 

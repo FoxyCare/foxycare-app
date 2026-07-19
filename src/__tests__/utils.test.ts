@@ -15,13 +15,13 @@ describe('cn', () => {
 })
 
 describe('formatCurrency', () => {
-  it('formats USD amounts', () => {
+  it('formats PLN amounts', () => {
     expect(formatCurrency(25)).toContain('25')
-    expect(formatCurrency(25)).toContain('$')
+    expect(formatCurrency(25)).toContain('zł')
   })
 
   it('formats decimal amounts', () => {
-    expect(formatCurrency(25.5)).toContain('25.50')
+    expect(formatCurrency(25.5)).toContain('25,50')
   })
 })
 

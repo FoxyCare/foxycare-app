@@ -14,9 +14,9 @@ const geistMono = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'FoxyCare – Find Your Perfect Nanny',
+  title: 'FoxyCare – Znajdź idealną nianię',
   description:
-    'FoxyCare connects parents with trusted, verified nannies. Browse profiles, check availability, and book with confidence.',
+    'FoxyCare łączy rodziny z ogłoszeniami niań. Przeglądaj, filtruj i pisz bezpośrednio.',
 }
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="pl">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

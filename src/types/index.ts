@@ -1,88 +1,86 @@
 export type UserRole = 'parent' | 'nanny'
+export type JobType = 'full_time' | 'part_time'
+export type ChildrenAgeRange = '0_3' | '3_6' | '6_plus'
 
-export interface Profile {
+export interface User {
+  id: string
+  email: string
+  full_name: string
+  role: UserRole
+  created_at: string
+  updated_at: string
+}
+
+export interface ParentProfile {
   id: string
   user_id: string
-  role: UserRole
-  full_name: string
-  avatar_url?: string
-  bio?: string
   location?: string
-  phone?: string
+  avatar_url?: string
   created_at: string
   updated_at: string
 }
 
-export interface NannyProfile extends Profile {
-  role: 'nanny'
-  hourly_rate?: number
-  experience_years?: number
-  certifications?: string[]
-  availability?: AvailabilitySlot[]
-  rating?: number
-  total_reviews?: number
-}
-
-export interface ParentProfile extends Profile {
-  role: 'parent'
-  children_count?: number
-  children_ages?: number[]
-}
-
-export interface AvailabilitySlot {
-  day: string
-  start_time: string
-  end_time: string
-}
-
-export interface Booking {
+export interface NannyProfile {
   id: string
-  parent_id: string
-  nanny_id: string
-  status: BookingStatus
-  start_time: string
-  end_time: string
-  hourly_rate: number
-  total_amount?: number
-  notes?: string
+  user_id: string
+  experience_years: number
+  children_age_range?: ChildrenAgeRange
+  job_type?: JobType
+  location?: string
+  description?: string
+  avatar_url?: string
   created_at: string
   updated_at: string
-  parent?: Profile
-  nanny?: Profile
 }
 
-export type BookingStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled'
+export interface Ad {
+  id: string
+  nanny_id: string
+  title: string
+  description?: string
+  experience_years: number
+  children_age_range?: ChildrenAgeRange
+  job_type?: JobType
+  location?: string
+  price?: number
+  created_at: string
+  updated_at: string
+  images?: AdImage[]
+  nanny?: User
+}
+
+export interface AdImage {
+  id: string
+  ad_id: string
+  image_url: string
+  created_at: string
+}
 
 export interface Conversation {
   id: string
-  participant_ids: string[]
+  user1_id: string
+  user2_id: string
+  last_message_at?: string
   created_at: string
-  updated_at: string
+  other_user?: User
   last_message?: Message
-  other_participant?: Profile
 }
 
 export interface Message {
   id: string
   conversation_id: string
   sender_id: string
+  receiver_id: string
   content: string
   created_at: string
   read_at?: string
-  sender?: Profile
+  sender?: User
 }
 
-export interface SearchFilters {
+export interface AdFilters {
   location?: string
-  min_rate?: number
-  max_rate?: number
   min_experience?: number
-  certifications?: string[]
-  availability_day?: string
-  rating?: number
+  max_experience?: number
+  children_age_range?: ChildrenAgeRange
+  job_type?: JobType
 }
