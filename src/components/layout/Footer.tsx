@@ -20,6 +20,12 @@ export function Footer() {
             <Link href="/register?role=nanny" className="hover:text-brand-600">
               Zostań nianią
             </Link>
+            <Link href="/terms" className="hover:text-brand-600">
+              Regulamin
+            </Link>
+            <Link href="/privacy" className="hover:text-brand-600">
+              Polityka Prywatności
+            </Link>
           </nav>
           <p className="text-sm text-gray-500">
             © {new Date().getFullYear()} FoxyCare. Wszelkie prawa zastrzeżone.

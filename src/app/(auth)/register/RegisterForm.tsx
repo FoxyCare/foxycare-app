@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { translateAuthError } from '@/lib/utils'
+import { TERMS_VERSION } from '@/lib/legal/terms'
 import type { UserRole } from '@/types'
 
 export default function RegisterForm() {
@@ -19,12 +20,19 @@ export default function RegisterForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole>(defaultRole)
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (!termsAccepted) {
+      setError('Aby założyć konto, musisz zaakceptować regulamin serwisu.')
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -33,7 +41,7 @@ export default function RegisterForm() {
         email,
         password,
         options: {
-          data: { full_name: fullName, role },
+          data: { full_name: fullName, role, terms_version: TERMS_VERSION },
         },
       })
 
@@ -101,13 +109,46 @@ export default function RegisterForm() {
             helperText="Minimum 8 znaków"
           />
 
+          <label className="flex items-start gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              required
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+            />
+            <span>
+              Akceptuję{' '}
+              <Link
+                href="/terms"
+                target="_blank"
+                className="font-medium text-brand-600 hover:underline"
+              >
+                regulamin serwisu
+              </Link>{' '}
+              i zapoznałem/-am się z{' '}
+              <Link
+                href="/privacy"
+                target="_blank"
+                className="font-medium text-brand-600 hover:underline"
+              >
+                polityką prywatności
+              </Link>
+            </span>
+          </label>
+
           {error && (
             <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
               {error}
             </p>
           )}
 
-          <Button type="submit" isLoading={isLoading} className="mt-2 w-full">
+          <Button
+            type="submit"
+            isLoading={isLoading}
+            disabled={!termsAccepted}
+            className="mt-2 w-full"
+          >
             Zarejestruj się
           </Button>
         </form>
