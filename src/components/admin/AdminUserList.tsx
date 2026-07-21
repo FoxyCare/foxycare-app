@@ -6,13 +6,18 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
+import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
 import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
 import type { AdminUserFilters, AdminUserRow, ChildrenAgeRange, JobType } from '@/types'
+
+const JOB_TYPE_OPTIONS = Object.entries(JOB_TYPE_LABEL).map(([value, label]) => ({ value, label }))
+const AGE_RANGE_OPTIONS = Object.entries(AGE_RANGE_LABEL).map(([value, label]) => ({ value, label }))
 
 export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
   const [users, setUsers] = useState<AdminUserRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [pendingId, setPendingId] = useState<string | null>(null)
+  const [pendingPublishId, setPendingPublishId] = useState<string | null>(null)
   const [filters, setFilters] = useState<AdminUserFilters>({})
 
   const fetchUsers = useCallback(async () => {
@@ -26,8 +31,8 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
     if (location) params.set('location', location)
 
     if (role === 'nanny') {
-      if (filters.job_type) params.set('job_type', filters.job_type)
-      if (filters.children_age_range) params.set('children_age_range', filters.children_age_range)
+      filters.job_type?.forEach((v) => params.append('job_type', v))
+      filters.children_age_range?.forEach((v) => params.append('children_age_range', v))
       if (filters.min_experience !== undefined) {
         params.set('min_experience', String(filters.min_experience))
       }
@@ -63,6 +68,25 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
     setPendingId(null)
   }
 
+  async function togglePublish(user: AdminUserRow) {
+    setPendingPublishId(user.id)
+    const action = user.profile?.is_published ? 'unpublish' : 'publish'
+    const res = await fetch(`/api/admin/users/${user.id}/${action}`, { method: 'POST' })
+    if (res.ok) {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id && u.profile
+            ? { ...u, profile: { ...u.profile, is_published: !u.profile.is_published } }
+            : u
+        )
+      )
+    } else {
+      const body = await res.json()
+      alert(body.error ?? 'Nie udało się wykonać akcji')
+    }
+    setPendingPublishId(null)
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -94,43 +118,22 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                     }))
                   }
                 />
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Typ pracy</label>
-                  <select
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
-                    value={filters.job_type ?? ''}
-                    onChange={(e) =>
-                      setFilters((f) => ({ ...f, job_type: (e.target.value || undefined) as JobType }))
-                    }
-                  >
-                    <option value="">Dowolny</option>
-                    {Object.entries(JOB_TYPE_LABEL).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Wiek dzieci</label>
-                  <select
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
-                    value={filters.children_age_range ?? ''}
-                    onChange={(e) =>
-                      setFilters((f) => ({
-                        ...f,
-                        children_age_range: (e.target.value || undefined) as ChildrenAgeRange,
-                      }))
-                    }
-                  >
-                    <option value="">Dowolny</option>
-                    {Object.entries(AGE_RANGE_LABEL).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CheckboxGroup
+                  label="Typ pracy"
+                  options={JOB_TYPE_OPTIONS}
+                  value={filters.job_type ?? []}
+                  onChange={(value) =>
+                    setFilters((f) => ({ ...f, job_type: value as JobType[] }))
+                  }
+                />
+                <CheckboxGroup
+                  label="Wiek dzieci"
+                  options={AGE_RANGE_OPTIONS}
+                  value={filters.children_age_range ?? []}
+                  onChange={(value) =>
+                    setFilters((f) => ({ ...f, children_age_range: value as ChildrenAgeRange[] }))
+                  }
+                />
               </>
             )}
           </div>
@@ -160,6 +163,14 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                             Zbanowany
                           </Badge>
                         )}
+                        {role === 'nanny' && (
+                          <Badge
+                            variant={user.profile?.is_published ? 'success' : 'default'}
+                            className="ml-2"
+                          >
+                            {user.profile?.is_published ? 'Opublikowany' : 'Nieopublikowany'}
+                          </Badge>
+                        )}
                       </p>
                       <p className="truncate text-sm text-gray-500">{user.email}</p>
                       <div className="mt-1 flex flex-wrap gap-1">
@@ -167,23 +178,35 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                         {role === 'nanny' && user.profile?.experience_years !== undefined && (
                           <Badge>{user.profile.experience_years} lat doświadczenia</Badge>
                         )}
-                        {role === 'nanny' && user.profile?.job_type && (
-                          <Badge>{JOB_TYPE_LABEL[user.profile.job_type]}</Badge>
-                        )}
-                        {role === 'nanny' && user.profile?.children_age_range && (
-                          <Badge>{AGE_RANGE_LABEL[user.profile.children_age_range]}</Badge>
-                        )}
+                        {role === 'nanny' &&
+                          user.profile?.job_type?.map((jt) => <Badge key={jt}>{JOB_TYPE_LABEL[jt]}</Badge>)}
+                        {role === 'nanny' &&
+                          user.profile?.children_age_range?.map((range) => (
+                            <Badge key={range}>{AGE_RANGE_LABEL[range]}</Badge>
+                          ))}
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant={user.is_banned ? 'outline' : 'danger'}
-                    size="sm"
-                    isLoading={pendingId === user.id}
-                    onClick={() => toggleBan(user)}
-                  >
-                    {user.is_banned ? 'Odbanuj' : 'Zbanuj'}
-                  </Button>
+                  <div className="flex shrink-0 gap-2">
+                    {role === 'nanny' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        isLoading={pendingPublishId === user.id}
+                        onClick={() => togglePublish(user)}
+                      >
+                        {user.profile?.is_published ? 'Cofnij publikację' : 'Opublikuj'}
+                      </Button>
+                    )}
+                    <Button
+                      variant={user.is_banned ? 'outline' : 'danger'}
+                      size="sm"
+                      isLoading={pendingId === user.id}
+                      onClick={() => toggleBan(user)}
+                    >
+                      {user.is_banned ? 'Odbanuj' : 'Zbanuj'}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

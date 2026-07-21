@@ -4,9 +4,9 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Button } from '@/components/ui/Button'
 import { BrandLogo, BrandWordmark } from '@/components/brand/BrandLogo'
 import { PersonIcon, SearchIcon, PeopleIcon } from '@/components/ui/icons'
-import { AdCard } from '@/components/AdCard'
+import { NannyCard } from '@/components/NannyCard'
 import { createClient } from '@/lib/supabase/server'
-import type { Ad, User } from '@/types'
+import type { NannyPublicProfile, User } from '@/types'
 
 const STEPS = [
   {
@@ -40,12 +40,12 @@ export default async function HomePage() {
     ? (await supabase.from('users').select('*').eq('id', authUser.id).single()).data
     : null
 
-  const { data: ads } = await supabase
-    .from('ads')
-    .select('*, images:ad_images(*), nanny:users!nanny_id(id, full_name)')
-    .order('created_at', { ascending: false })
+  const { data: nannies } = await supabase
+    .from('nanny_public_profiles')
+    .select('*')
+    .order('published_at', { ascending: false })
     .limit(3)
-    .returns<Ad[]>()
+    .returns<NannyPublicProfile[]>()
 
   return (
     <>
@@ -98,7 +98,7 @@ export default async function HomePage() {
             <h2 className="text-center text-3xl font-bold text-gray-900">
               Znajdź idealną nianię
             </h2>
-            {!ads || ads.length === 0 ? (
+            {!nannies || nannies.length === 0 ? (
               <p className="mt-8 text-center text-gray-500">
                 Jeszcze nikt nie dodał ogłoszenia —{' '}
                 <Link href="/register?role=nanny" className="text-brand-600 hover:underline">
@@ -108,8 +108,8 @@ export default async function HomePage() {
               </p>
             ) : (
               <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {ads.map((ad) => (
-                  <AdCard key={ad.id} ad={ad} />
+                {nannies.map((nanny) => (
+                  <NannyCard key={nanny.id} nanny={nanny} />
                 ))}
               </div>
             )}

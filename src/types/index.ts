@@ -23,40 +23,42 @@ export interface ParentProfile {
   updated_at: string
 }
 
+// A nanny has exactly one listing, and it IS her profile — see foxycare-db
+// migration 0020. No separate ads table, no photo gallery (avatar_url is
+// the only photo, shown wherever a listing is shown).
 export interface NannyProfile {
   id: string
   user_id: string
-  experience_years: number
-  children_age_range?: ChildrenAgeRange
-  job_type?: JobType
-  location?: string
-  description?: string
-  avatar_url?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface Ad {
-  id: string
-  nanny_id: string
-  title: string
+  title?: string
   description?: string
   experience_years: number
-  children_age_range?: ChildrenAgeRange
-  job_type?: JobType
+  children_age_range?: ChildrenAgeRange[]
+  job_type?: JobType[]
   location?: string
   price?: number
+  avatar_url?: string
+  is_published: boolean
+  published_at?: string
   created_at: string
   updated_at: string
-  images?: AdImage[]
-  nanny?: User
 }
 
-export interface AdImage {
+// Mirrors the public.nanny_public_profiles view (foxycare-db migration
+// 0021) — the anon-safe, published-only projection used by /search and
+// the homepage, since public.users (where full_name lives) is
+// authenticated-only for SELECT.
+export interface NannyPublicProfile {
   id: string
-  ad_id: string
-  image_url: string
-  created_at: string
+  full_name: string
+  avatar_url?: string
+  location?: string
+  experience_years?: number
+  job_type?: JobType[]
+  children_age_range?: ChildrenAgeRange[]
+  description?: string
+  title?: string
+  price?: number
+  published_at?: string
 }
 
 export interface Conversation {
@@ -84,16 +86,16 @@ export interface AdFilters {
   location?: string
   min_experience?: number
   max_experience?: number
-  children_age_range?: ChildrenAgeRange
-  job_type?: JobType
+  children_age_range?: ChildrenAgeRange[]
+  job_type?: JobType[]
 }
 
 export interface AdminUserFilters {
   name?: string
   location?: string
   min_experience?: number
-  children_age_range?: ChildrenAgeRange
-  job_type?: JobType
+  children_age_range?: ChildrenAgeRange[]
+  job_type?: JobType[]
 }
 
 export interface AdminUserRow extends User {

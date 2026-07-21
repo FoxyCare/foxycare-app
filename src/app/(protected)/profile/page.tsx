@@ -1,14 +1,21 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Avatar } from '@/components/ui/Avatar'
+import { NannyPhoto } from '@/components/NannyPhoto'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
 import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
-import type { Ad, NannyProfile, ParentProfile, User } from '@/types'
+import { uploadAvatar } from '@/lib/upload/uploadAvatar'
+import { ImageCompressionError } from '@/lib/upload/compressImage'
+import type { NannyProfile, ParentProfile, User } from '@/types'
+
+const JOB_TYPE_OPTIONS = Object.entries(JOB_TYPE_LABEL).map(([value, label]) => ({ value, label }))
+const AGE_RANGE_OPTIONS = Object.entries(AGE_RANGE_LABEL).map(([value, label]) => ({ value, label }))
 
 type RoleProfile = Partial<NannyProfile & ParentProfile>
 
@@ -16,24 +23,17 @@ export default function ProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<Partial<User>>({})
   const [roleProfile, setRoleProfile] = useState<RoleProfile>({})
-  const [ads, setAds] = useState<Ad[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isNanny = user.role === 'nanny'
-
-  const loadAds = useCallback(async (nannyId: string) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('ads')
-      .select('*')
-      .eq('nanny_id', nannyId)
-      .order('created_at', { ascending: false })
-      .returns<Ad[]>()
-    setAds(data ?? [])
-  }, [])
 
   useEffect(() => {
     async function loadProfile() {
@@ -68,14 +68,13 @@ export default function ProfilePage() {
           .maybeSingle<RoleProfile>()
 
         if (profileRow) setRoleProfile(profileRow)
-        if (userRow.role === 'nanny') await loadAds(authUser.id)
       }
 
       setIsLoading(false)
     }
 
     loadProfile()
-  }, [router, loadAds])
+  }, [router])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -115,9 +114,69 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleDeleteAd(id: string) {
-    await fetch(`/api/ads/${id}`, { method: 'DELETE' })
-    setAds((prev) => prev.filter((ad) => ad.id !== id))
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setAvatarError(null)
+    setIsUploadingAvatar(true)
+    try {
+      const supabase = createClient()
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser()
+      if (!authUser) return
+
+      const avatarUrl = await uploadAvatar(supabase, authUser.id, file)
+
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...roleProfile, avatar_url: avatarUrl }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Nie udało się zapisać zdjęcia')
+
+      setRoleProfile((p) => ({ ...p, avatar_url: avatarUrl }))
+    } catch (err) {
+      setAvatarError(
+        err instanceof ImageCompressionError ? err.message : 'Nie udało się przesłać zdjęcia.'
+      )
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  async function handleTogglePublish() {
+    const publishing = !roleProfile.is_published
+
+    if (publishing && !roleProfile.title?.trim()) {
+      setPublishError('Aby opublikować profil, uzupełnij tytuł ogłoszenia poniżej.')
+      return
+    }
+
+    setPublishError(null)
+    setIsPublishing(true)
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...roleProfile,
+          is_published: publishing,
+          published_at: publishing ? new Date().toISOString() : roleProfile.published_at,
+        }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        setPublishError(body.error ?? 'Nie udało się zmienić statusu publikacji')
+        return
+      }
+      setRoleProfile((p) => ({ ...p, is_published: publishing, published_at: body.published_at }))
+      router.refresh()
+    } finally {
+      setIsPublishing(false)
+    }
   }
 
   if (isLoading) {
@@ -135,11 +194,34 @@ export default function ProfilePage() {
         <p className="text-gray-500">Zarządzaj swoimi danymi</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+      <div className="grid max-w-4xl gap-6 sm:grid-cols-[240px_1fr]">
         <Card>
-          <CardContent className="flex flex-col items-center gap-4 pt-6">
-            <Avatar src={roleProfile.avatar_url} name={user.full_name} size="xl" />
-            <p className="text-sm text-gray-500 text-center">Wgrywanie zdjęcia wkrótce</p>
+          <CardContent className="flex flex-col items-center gap-3 pt-6">
+            <NannyPhoto
+              src={roleProfile.avatar_url}
+              name={user.full_name ?? '?'}
+              className="h-40 w-40 rounded-2xl"
+              initialsClassName="text-4xl"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              isLoading={isUploadingAvatar}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Zmień zdjęcie
+            </Button>
+            {avatarError && (
+              <p className="text-center text-xs text-red-600">{avatarError}</p>
+            )}
           </CardContent>
         </Card>
 
@@ -163,6 +245,13 @@ export default function ProfilePage() {
               {isNanny && (
                 <>
                   <Input
+                    label="Tytuł ogłoszenia"
+                    placeholder="np. Doświadczona niania – Warszawa Mokotów"
+                    value={roleProfile.title ?? ''}
+                    onChange={(e) => setRoleProfile((p) => ({ ...p, title: e.target.value }))}
+                    helperText="Wymagany do publikacji profilu"
+                  />
+                  <Input
                     label="Doświadczenie (lata)"
                     type="number"
                     min="0"
@@ -174,47 +263,42 @@ export default function ProfilePage() {
                       }))
                     }
                   />
+                  <Input
+                    label="Stawka za godzinę (zł, opcjonalnie)"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={roleProfile.price ?? ''}
+                    onChange={(e) =>
+                      setRoleProfile((p) => ({
+                        ...p,
+                        price: e.target.value ? parseFloat(e.target.value) : undefined,
+                      }))
+                    }
+                  />
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm font-medium text-gray-700">Typ pracy</label>
-                      <select
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                        value={roleProfile.job_type ?? ''}
-                        onChange={(e) =>
-                          setRoleProfile((p) => ({
-                            ...p,
-                            job_type: (e.target.value || undefined) as NannyProfile['job_type'],
-                          }))
-                        }
-                      >
-                        <option value="">Nie wybrano</option>
-                        {Object.entries(JOB_TYPE_LABEL).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm font-medium text-gray-700">Wiek dzieci</label>
-                      <select
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                        value={roleProfile.children_age_range ?? ''}
-                        onChange={(e) =>
-                          setRoleProfile((p) => ({
-                            ...p,
-                            children_age_range: (e.target.value || undefined) as NannyProfile['children_age_range'],
-                          }))
-                        }
-                      >
-                        <option value="">Nie wybrano</option>
-                        {Object.entries(AGE_RANGE_LABEL).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <CheckboxGroup
+                      label="Typ pracy"
+                      options={JOB_TYPE_OPTIONS}
+                      value={roleProfile.job_type ?? []}
+                      onChange={(value) =>
+                        setRoleProfile((p) => ({
+                          ...p,
+                          job_type: value as NannyProfile['job_type'],
+                        }))
+                      }
+                    />
+                    <CheckboxGroup
+                      label="Wiek dzieci"
+                      options={AGE_RANGE_OPTIONS}
+                      value={roleProfile.children_age_range ?? []}
+                      onChange={(value) =>
+                        setRoleProfile((p) => ({
+                          ...p,
+                          children_age_range: value as NannyProfile['children_age_range'],
+                        }))
+                      }
+                    />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-gray-700">Opis</label>
@@ -245,75 +329,35 @@ export default function ProfilePage() {
       {isNanny && (
         <Card>
           <CardHeader>
-            <CardTitle>Twoje ogłoszenia</CardTitle>
+            <CardTitle>Publikacja profilu</CardTitle>
           </CardHeader>
           <CardContent>
-            <NewAdForm
-              onCreated={(ad) => setAds((prev) => [ad, ...prev])}
-            />
-            {ads.length === 0 ? (
-              <p className="mt-4 text-sm text-gray-500">Nie masz jeszcze żadnych ogłoszeń.</p>
-            ) : (
-              <div className="mt-4 divide-y divide-gray-100">
-                {ads.map((ad) => (
-                  <div key={ad.id} className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{ad.title}</p>
-                      <p className="text-xs text-gray-500">{ad.location}</p>
-                    </div>
-                    <Button variant="danger" size="sm" onClick={() => handleDeleteAd(ad.id)}>
-                      Usuń
-                    </Button>
-                  </div>
-                ))}
-              </div>
+            <p className="flex items-center gap-2 text-sm text-gray-700">
+              Status:
+              <Badge variant={roleProfile.is_published ? 'success' : 'default'}>
+                {roleProfile.is_published ? 'Opublikowany' : 'Nieopublikowany'}
+              </Badge>
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              {roleProfile.is_published
+                ? 'Twój profil jest widoczny dla rodziców w wyszukiwarce. Możesz go w każdej chwili ukryć.'
+                : 'Twój profil nie jest jeszcze widoczny dla rodziców — opublikuj go, żeby pojawił się w wyszukiwarce.'}
+            </p>
+            {publishError && (
+              <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">{publishError}</p>
             )}
+            <Button
+              type="button"
+              variant={roleProfile.is_published ? 'outline' : 'primary'}
+              className="mt-4"
+              isLoading={isPublishing}
+              onClick={handleTogglePublish}
+            >
+              {roleProfile.is_published ? 'Cofnij publikację' : 'Opublikuj profil'}
+            </Button>
           </CardContent>
         </Card>
       )}
     </div>
-  )
-}
-
-function NewAdForm({ onCreated }: { onCreated: (ad: Ad) => void }) {
-  const [title, setTitle] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!title.trim()) return
-    setIsSaving(true)
-    setError(null)
-
-    const res = await fetch('/api/ads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    })
-    const body = await res.json()
-
-    if (res.ok) {
-      onCreated(body)
-      setTitle('')
-    } else {
-      setError(body.error ?? 'Nie udało się dodać ogłoszenia')
-    }
-    setIsSaving(false)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <Input
-        placeholder="Tytuł nowego ogłoszenia"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="flex-1"
-      />
-      <Button type="submit" isLoading={isSaving}>
-        Dodaj
-      </Button>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-    </form>
   )
 }

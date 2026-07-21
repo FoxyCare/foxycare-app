@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import type { Ad, NannyProfile, ParentProfile, User } from '@/types'
+import type { NannyProfile, ParentProfile, User } from '@/types'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -30,15 +31,7 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .maybeSingle<NannyProfile | ParentProfile>()
 
-  const { data: ads } = isNanny
-    ? await supabase
-        .from('ads')
-        .select('*')
-        .eq('nanny_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5)
-        .returns<Ad[]>()
-    : { data: null }
+  const nannyProfile = isNanny ? (roleProfile as NannyProfile | undefined) : undefined
 
   const { count: conversationCount } = await supabase
     .from('conversations')
@@ -68,8 +61,12 @@ export default async function DashboardPage() {
         {isNanny && (
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-gray-500">Twoje ogłoszenia</p>
-              <p className="mt-1 text-3xl font-bold text-gray-900">{ads?.length ?? 0}</p>
+              <p className="text-sm text-gray-500">Status profilu</p>
+              <p className="mt-1">
+                <Badge variant={nannyProfile?.is_published ? 'success' : 'default'}>
+                  {nannyProfile?.is_published ? 'Opublikowany' : 'Nieopublikowany'}
+                </Badge>
+              </p>
             </CardContent>
           </Card>
         )}
@@ -84,32 +81,22 @@ export default async function DashboardPage() {
       {isNanny ? (
         <Card>
           <CardHeader>
-            <CardTitle>Twoje ogłoszenia</CardTitle>
+            <CardTitle>Twój profil</CardTitle>
           </CardHeader>
           <CardContent>
-            {!ads || ads.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                Nie masz jeszcze żadnych ogłoszeń.{' '}
-                <Link href="/profile" className="text-brand-600 hover:underline">
-                  Dodaj pierwsze
-                </Link>
-                .
-              </p>
+            {nannyProfile?.title ? (
+              <p className="text-sm font-medium text-gray-900">{nannyProfile.title}</p>
             ) : (
-              <div className="divide-y divide-gray-100">
-                {ads.map((ad) => (
-                  <div key={ad.id} className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{ad.title}</p>
-                      <p className="text-xs text-gray-500">{ad.location}</p>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      {new Date(ad.created_at).toLocaleDateString('pl-PL')}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <p className="text-sm text-gray-500">Nie uzupełniłaś jeszcze tytułu ogłoszenia.</p>
             )}
+            <p className="mt-1 text-sm text-gray-500">
+              {nannyProfile?.is_published
+                ? 'Twój profil jest widoczny dla rodziców w wyszukiwarce.'
+                : 'Twój profil nie jest jeszcze widoczny dla rodziców.'}
+            </p>
+            <Link href="/profile" className="mt-4 inline-block">
+              <Button size="sm">Zarządzaj profilem</Button>
+            </Link>
           </CardContent>
         </Card>
       ) : (
