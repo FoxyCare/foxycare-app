@@ -96,7 +96,8 @@ export default function PrivacyPage() {
             <Ul
               items={[
                 <>
-                  <b>Supabase</b> (baza danych, uwierzytelnianie Użytkowników),
+                  <b>Supabase</b> (baza danych, uwierzytelnianie Użytkowników, przechowywanie
+                  przesyłanych przez Użytkowników zdjęć profilowych),
                 </>,
                 <>
                   <b>Vercel</b> (hosting aplikacji).

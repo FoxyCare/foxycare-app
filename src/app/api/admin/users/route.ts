@@ -27,11 +27,11 @@ export async function GET(request: Request) {
   if (location) query = query.ilike('profile.location', `%${location}%`)
 
   if (role === 'nanny') {
-    const jobType = searchParams.get('job_type')
-    if (jobType) query = query.eq('profile.job_type', jobType)
+    const jobType = searchParams.getAll('job_type')
+    if (jobType.length) query = query.overlaps('profile.job_type', jobType)
 
-    const ageRange = searchParams.get('children_age_range')
-    if (ageRange) query = query.eq('profile.children_age_range', ageRange)
+    const ageRange = searchParams.getAll('children_age_range')
+    if (ageRange.length) query = query.overlaps('profile.children_age_range', ageRange)
 
     const minExperience = searchParams.get('min_experience')
     if (minExperience) query = query.gte('profile.experience_years', Number(minExperience))
