@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/supabase/requireAdmin'
+import { logAdminAction } from '@/lib/admin/logAdminAction'
 
 export async function POST(
   _request: Request,
@@ -19,5 +20,6 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  await logAdminAction(supabase, adminCheck, id, 'unban')
   return NextResponse.json({ success: true })
 }

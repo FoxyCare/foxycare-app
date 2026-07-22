@@ -53,7 +53,7 @@ foxycare-app/
 │   │   ├── layout/                 # Navbar, Footer
 │   │   ├── brand/                  # BrandLogo, BrandWordmark
 │   │   ├── admin/                  # AdminUserList (shared by /admin/nannies and /admin/parents;
-│   │   │                           #   ban/unban + publish/unpublish)
+│   │   │                           #   ban/unban + publish/unpublish + delete account)
 │   │   ├── legal/                  # LegalDoc.tsx — Section/P/Ul shared by /terms and /privacy
 │   │   ├── NannyCard.tsx           # search-results/homepage listing card
 │   │   ├── NannyPhoto.tsx          # shared photo tile (fallback to initials) — NannyCard's
@@ -64,6 +64,8 @@ foxycare-app/
 │   ├── lib/
 │   │   ├── supabase/               # client.ts, server.ts, middleware.ts, requireAdmin.ts
 │   │   ├── upload/                 # compressImage.ts (Canvas resize+WebP), uploadAvatar.ts
+│   │   │                           #   (also exports deleteAvatar, used by account deletion)
+│   │   ├── admin/                  # logAdminAction.ts — writes to admin_actions (RODO Art. 32)
 │   │   ├── legal/                  # terms.ts, privacy.ts — TERMS_VERSION/PRIVACY_VERSION consts
 │   │   ├── labels.ts               # shared JOB_TYPE_LABEL / AGE_RANGE_LABEL maps
 │   │   └── utils/
@@ -87,7 +89,7 @@ foxycare-app/
 | `/onboarding` | authenticated | First-login profile setup (role-specific) |
 | `/dashboard` | authenticated | Publish status card + quick link to edit (nanny), or a shortcut to search (parent) |
 | `/search` | **public** | Browse and filter **published** nanny listings — no account needed. Reads from the `nanny_public_profiles` view, not `nanny_profiles` directly (see [`foxycare-db`](../foxycare-db) for why). Messaging a nanny from here prompts login. |
-| `/profile` | authenticated | Edit profile — nannies also set title/price/photo here and publish/unpublish their listing |
+| `/profile` | authenticated | Edit profile — nannies also set title/price/photo here and publish/unpublish their listing; also where a user deletes their own account (RODO Art. 17) |
 | `/chat` | authenticated | Conversations and messages |
 | `/nanny/[id]` | authenticated to view; separately gated by publish state | A single nanny's public listing (photo, title, price, description, contact). Requires a session (`proxy.ts`), and — independent of that — RLS only returns the row if it's published, or the caller is the owner or an admin; anyone else gets a 404, not an error |
 | `/admin`, `/admin/nannies`, `/admin/parents` | admin only | Stats overview; filterable nanny/parent lists with ban/unban and (nannies) publish/unpublish |
@@ -98,12 +100,14 @@ foxycare-app/
 | Route | Methods | Purpose |
 | ------- | --------- | --------- |
 | `/api/profile` | `GET`, `PUT` | Current user's role-specific profile (`parent_profiles`/`nanny_profiles`) — nannies also PUT `title`/`price`/`is_published`/`published_at` here; no separate publish endpoint exists for self-service |
+| `/api/account` | `DELETE` | Deletes the caller's own account — RODO Art. 17 self-service. Removes the avatar from Storage, then calls `delete_user_account` (see [`foxycare-db`](../foxycare-db)'s migration 0022); everything else cascades at the DB level |
 | `/api/conversations` | `GET`, `POST` | List the caller's conversations; find-or-create one with another user |
 | `/api/messages` | `GET`, `POST` | Messages within a conversation |
 | `/api/admin/stats` | `GET` | Total/online/banned/published-profile counts (admin only) |
 | `/api/admin/users` | `GET` | Filterable nanny/parent list (admin only) |
 | `/api/admin/users/[id]/ban`, `/unban` | `POST` | Sets/clears `users.is_banned` (admin only) — enforced entirely in app code, see [Environment Variables](#environment-variables) |
 | `/api/admin/users/[id]/publish`, `/unpublish` | `POST` | Sets/clears `nanny_profiles.is_published` (admin only) — moderation override alongside the nanny's own self-service toggle in `/profile` |
+| `/api/admin/users/[id]/delete` | `POST` | Admin-triggered account deletion — for erasure requests from accounts that can't act for themselves (e.g. banned users, per `/terms` §12) |
 
 All data access goes through Supabase with Row Level Security as the actual security boundary — the API routes are a convenience layer, not the source of truth for authorization. Two exceptions: `users.is_banned` (RLS only guards *who* can flip it; the sign-in block itself is app code — `LoginForm` + `proxy.ts`) and, more mildly, `nanny_profiles.is_published` (RLS fully enforces *read* visibility, but the self-service *write* path has no payment gate yet — see [`foxycare-db`](../foxycare-db)'s migration 0020 comments and `/terms` §6).
 
