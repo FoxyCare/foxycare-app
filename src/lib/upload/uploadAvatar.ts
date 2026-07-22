@@ -22,3 +22,17 @@ export async function uploadAvatar(
   const { data } = supabase.storage.from('avatars').getPublicUrl(path)
   return `${data.publicUrl}?v=${Date.now()}`
 }
+
+// Used by account deletion (self-service and admin) — removes the backing
+// Storage object(s) via the Storage API before the account row is deleted.
+// A raw SQL DELETE on storage.objects would only remove the metadata row,
+// not the actual file, so this has to go through supabase.storage, not a DB
+// migration (see foxycare-db migration 0022's comment on the same point).
+export async function deleteAvatar(supabase: SupabaseClient, userId: string): Promise<void> {
+  const { data: files } = await supabase.storage.from('avatars').list(userId)
+  if (!files?.length) return
+
+  const paths = files.map((f) => `${userId}/${f.name}`)
+  const { error } = await supabase.storage.from('avatars').remove(paths)
+  if (error) throw error
+}

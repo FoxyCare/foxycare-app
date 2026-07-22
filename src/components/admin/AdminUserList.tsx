@@ -18,6 +18,7 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
   const [isLoading, setIsLoading] = useState(true)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [pendingPublishId, setPendingPublishId] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [filters, setFilters] = useState<AdminUserFilters>({})
 
   const fetchUsers = useCallback(async () => {
@@ -85,6 +86,25 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
       alert(body.error ?? 'Nie udało się wykonać akcji')
     }
     setPendingPublishId(null)
+  }
+
+  async function deleteAccount(user: AdminUserRow) {
+    if (
+      !window.confirm(
+        `Trwale usunąć konto użytkownika ${user.full_name}? Ta operacja jest nieodwracalna — usunięte zostaną jego profil, zdjęcie i wiadomości.`
+      )
+    ) {
+      return
+    }
+    setPendingDeleteId(user.id)
+    const res = await fetch(`/api/admin/users/${user.id}/delete`, { method: 'POST' })
+    if (res.ok) {
+      setUsers((prev) => prev.filter((u) => u.id !== user.id))
+    } else {
+      const body = await res.json()
+      alert(body.error ?? 'Nie udało się usunąć konta')
+    }
+    setPendingDeleteId(null)
   }
 
   return (
@@ -205,6 +225,14 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                       onClick={() => toggleBan(user)}
                     >
                       {user.is_banned ? 'Odbanuj' : 'Zbanuj'}
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      isLoading={pendingDeleteId === user.id}
+                      onClick={() => deleteAccount(user)}
+                    >
+                      Usuń konto
                     </Button>
                   </div>
                 </div>

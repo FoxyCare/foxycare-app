@@ -287,8 +287,12 @@ export default function TermsPage() {
 
           <Section title="§12. Rozwiązanie umowy i usunięcie Konta">
             <P>
-              12.1. Użytkownik może w każdej chwili zrezygnować z korzystania z Serwisu i zażądać
-              usunięcia Konta, kontaktując się z Operatorem na adres wskazany w §1.2.
+              12.1. Użytkownik może w każdej chwili zrezygnować z korzystania z Serwisu i
+              samodzielnie usunąć swoje Konto w ustawieniach Konta (Mój profil → Usuń moje konto)
+              — usunięcie następuje niezwłocznie i obejmuje profil, zdjęcie oraz wiadomości
+              Użytkownika. Jeżeli zalogowanie nie jest możliwe (np. z powodu zablokowania Konta na
+              podstawie §9), żądanie usunięcia można zgłosić na adres wskazany w §1.2 — Operator
+              usunie Konto w takim przypadku.
             </P>
             <P>
               12.2. Operator może usunąć Konto Użytkownika w przypadku rażącego lub uporczywego

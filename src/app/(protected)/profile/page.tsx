@@ -31,6 +31,8 @@ export default function ProfilePage() {
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isNanny = user.role === 'nanny'
@@ -179,6 +181,32 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (
+      !window.confirm(
+        'Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna — usunięte zostaną Twój profil, zdjęcie i wiadomości.'
+      )
+    ) {
+      return
+    }
+
+    setDeleteError(null)
+    setIsDeletingAccount(true)
+    try {
+      const res = await fetch('/api/account', { method: 'DELETE' })
+      if (!res.ok) {
+        const body = await res.json()
+        setDeleteError(body.error ?? 'Nie udało się usunąć konta')
+        return
+      }
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/')
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -309,6 +337,10 @@ export default function ProfilePage() {
                       onChange={(e) => setRoleProfile((p) => ({ ...p, description: e.target.value }))}
                       placeholder="Opowiedz o sobie..."
                     />
+                    <p className="text-xs text-gray-400">
+                      Opis jest publiczny — nie zamieszczaj w nim danych szczególnie wrażliwych
+                      (np. o stanie zdrowia, wyznaniu) ani danych osobowych dzieci.
+                    </p>
                   </div>
                 </>
               )}
@@ -358,6 +390,34 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Usunięcie konta</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500">
+            Usunięcie konta jest nieodwracalne — usunięte zostaną Twój profil, zdjęcie oraz
+            wiadomości. Zobacz też{' '}
+            <a href="/privacy" className="text-brand-600 underline">
+              Politykę Prywatności
+            </a>
+            .
+          </p>
+          {deleteError && (
+            <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">{deleteError}</p>
+          )}
+          <Button
+            type="button"
+            variant="danger"
+            className="mt-4"
+            isLoading={isDeletingAccount}
+            onClick={handleDeleteAccount}
+          >
+            Usuń moje konto
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

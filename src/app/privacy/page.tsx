@@ -139,14 +139,27 @@ export default function PrivacyPage() {
           <Section title="§5. Okres przechowywania danych">
             <P>
               5.1. Dane Konta i treść Ogłoszeń są przechowywane przez okres posiadania Konta w
-              Serwisie i usuwane niezwłocznie po jego usunięciu, z zastrzeżeniem §5.3.
+              Serwisie i usuwane niezwłocznie po jego usunięciu (samodzielnie przez Użytkownika w
+              ustawieniach Konta lub przez Operatora na wniosek — patrz Regulamin §12), z
+              zastrzeżeniem §5.3.
             </P>
-            <P>5.2. Wiadomości są przechowywane tak długo, jak długo istnieje Konto ich nadawcy lub odbiorcy.</P>
+            <P>
+              5.2. Usunięcie Konta jednej ze stron rozmowy powoduje niezwłoczne i trwałe usunięcie
+              całej korespondencji między nią a drugą stroną, również z widoku drugiej strony —
+              Serwis nie przechowuje kopii wiadomości poza istniejącymi Kontami ich uczestników.
+            </P>
             <P>
               5.3. Dane niezbędne do ustalenia, dochodzenia lub obrony przed roszczeniami mogą być
               przechowywane przez okres przedawnienia tych roszczeń zgodnie z Kodeksem cywilnym (co
               do zasady 6 lat, a dla roszczeń okresowych i związanych z prowadzeniem działalności
               gospodarczej — 3 lata, art. 118 Kodeksu cywilnego).
+            </P>
+            <P>
+              5.4. Konto zablokowane z powodu naruszenia Regulaminu (§9 Regulaminu) nie jest
+              usuwane automatycznie, aby umożliwić rozpatrzenie ewentualnych reklamacji lub
+              roszczeń związanych z naruszeniem — jego dane są przechowywane nie dłużej niż okres
+              wskazany w §5.3, po czym są usuwane, chyba że Użytkownik wcześniej zażąda usunięcia
+              zgodnie z §6.
             </P>
           </Section>
 
@@ -168,7 +181,11 @@ export default function PrivacyPage() {
               Prezesa Urzędu Ochrony Danych Osobowych (ul. Stawki 2, 00-193 Warszawa).
             </P>
             <P>
-              6.3. W celu realizacji powyższych praw prosimy o kontakt na adres wskazany w §1.2.
+              6.3. Prawo do usunięcia danych (Konta) można zrealizować samodzielnie i od razu, w
+              ustawieniach Konta (Mój profil → Usuń moje konto) — nie jest do tego potrzebny
+              kontakt z Administratorem. W celu realizacji pozostałych praw, a także usunięcia
+              Konta, do którego Użytkownik nie ma dostępu (np. z powodu zablokowania), prosimy o
+              kontakt na adres wskazany w §1.2.
             </P>
           </Section>
 
