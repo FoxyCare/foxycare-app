@@ -205,13 +205,31 @@ export default function TermsPage() {
               7.2. Operator zdecydowanie rekomenduje, aby przed nawiązaniem współpracy każdy
               Użytkownik samodzielnie zweryfikował drugą stronę, w szczególności poprzez: okazanie
               dokumentu tożsamości, przedstawienie aktualnego zaświadczenia z Krajowego Rejestru
-              Karnego, zebranie i sprawdzenie referencji, spotkanie osobiste przed rozpoczęciem
-              opieki oraz ustalenie pisemnych warunków współpracy.
+              Karnego, sprawdzenie{' '}
+              <a
+                href="https://rps.ms.gov.pl/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-600 underline"
+              >
+                Rejestru Sprawców Przestępstw na Tle Seksualnym
+              </a>
+              , zebranie i sprawdzenie referencji, spotkanie osobiste przed rozpoczęciem opieki
+              oraz ustalenie pisemnych warunków współpracy.
             </P>
             <P>
               7.3. Decyzja o nawiązaniu kontaktu i rozpoczęciu współpracy z inną osobą poznaną za
               pośrednictwem Serwisu należy wyłącznie do Użytkownika i jest podejmowana na jego
               własne ryzyko i odpowiedzialność.
+            </P>
+            <P>
+              7.4. Obowiązek sprawdzenia Rejestru Sprawców Przestępstw na Tle Seksualnym przed
+              powierzeniem opieki nad dzieckiem, wynikający z przepisów o przeciwdziałaniu
+              zagrożeniom przestępczością na tle seksualnym i ochronie małoletnich, może spoczywać
+              na osobie organizującej taką opiekę lub powierzającej ją innej osobie. Jak wskazano w
+              §3.2, Operator nie jest stroną Usługi opiekuńczej, nie zatrudnia Niań ani nie
+              organizuje opieki nad dziećmi — dopełnienie takich obowiązków, w tym sprawdzenie
+              Rejestru przed nawiązaniem współpracy, należy wyłącznie do Rodzica.
             </P>
           </Section>
 
