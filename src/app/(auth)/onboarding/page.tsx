@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { TERMS_VERSION } from '@/lib/legal/terms'
 import type { UserRole } from '@/types'
 
 export default function OnboardingPage() {
@@ -15,6 +17,13 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Only true for a first-time OAuth (Google/Facebook/Apple) sign-in —
+  // email/password signups already recorded terms acceptance at signUp()
+  // (RegisterForm), so this step never renders for them. See
+  // /auth/callback and proxy.ts for how a user ends up here needing it.
+  const [needsConsent, setNeedsConsent] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+
   const [form, setForm] = useState({
     full_name: '',
     location: '',
@@ -22,7 +31,12 @@ export default function OnboardingPage() {
     experience_years: '',
   })
 
-  const steps = role === 'nanny' ? ['Podstawowe dane', 'Lokalizacja', 'Szczegóły'] : ['Podstawowe dane', 'Lokalizacja']
+  const steps = [
+    ...(needsConsent ? ['Rola i regulamin'] : []),
+    'Podstawowe dane',
+    'Lokalizacja',
+    ...(role === 'nanny' ? ['Szczegóły'] : []),
+  ]
 
   useEffect(() => {
     async function loadRole() {
@@ -34,10 +48,15 @@ export default function OnboardingPage() {
         router.push('/login')
         return
       }
-      const { data } = await supabase.from('users').select('role, full_name').eq('id', user.id).single()
+      const { data } = await supabase
+        .from('users')
+        .select('role, full_name, terms_accepted_at')
+        .eq('id', user.id)
+        .single()
       if (data) {
         setRole(data.role)
         setForm((f) => ({ ...f, full_name: data.full_name ?? '' }))
+        setNeedsConsent(!data.terms_accepted_at)
       }
     }
     loadRole()
@@ -61,9 +80,16 @@ export default function OnboardingPage() {
         return
       }
 
+      const userUpdate: Record<string, unknown> = { full_name: form.full_name }
+      if (needsConsent) {
+        userUpdate.role = role
+        userUpdate.terms_accepted_at = new Date().toISOString()
+        userUpdate.terms_version = TERMS_VERSION
+      }
+
       const { error: userError } = await supabase
         .from('users')
-        .update({ full_name: form.full_name })
+        .update(userUpdate)
         .eq('id', user.id)
 
       if (userError) {
@@ -96,6 +122,9 @@ export default function OnboardingPage() {
     }
   }
 
+  const onConsentStep = steps[step] === 'Rola i regulamin'
+  const canAdvance = !onConsentStep || termsAccepted
+
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
@@ -115,21 +144,63 @@ export default function OnboardingPage() {
         </p>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {step === 0 && (
+        {onConsentStep && (
+          <>
+            <p className="text-sm text-gray-600">
+              Dokończ zakładanie konta — wybierz rolę i zaakceptuj regulamin.
+            </p>
+            <div className="flex rounded-lg border border-gray-200 p-1">
+              {(['parent', 'nanny'] as UserRole[]).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${
+                    role === r
+                      ? 'bg-brand-600 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {r === 'parent' ? '👨‍👩‍👧 Rodzic' : '🤝 Niania'}
+                </button>
+              ))}
+            </div>
+            <label className="flex items-start gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                required
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span>
+                Akceptuję{' '}
+                <Link href="/terms" target="_blank" className="font-medium text-brand-600 hover:underline">
+                  regulamin serwisu
+                </Link>{' '}
+                i zapoznałem/-am się z{' '}
+                <Link href="/privacy" target="_blank" className="font-medium text-brand-600 hover:underline">
+                  polityką prywatności
+                </Link>
+              </span>
+            </label>
+          </>
+        )}
+        {steps[step] === 'Podstawowe dane' && (
           <Input
             label="Imię i nazwisko"
             value={form.full_name}
             onChange={(e) => update('full_name', e.target.value)}
           />
         )}
-        {step === 1 && (
+        {steps[step] === 'Lokalizacja' && (
           <Input
             label="Lokalizacja (miasto)"
             value={form.location}
             onChange={(e) => update('location', e.target.value)}
           />
         )}
-        {step === 2 && role === 'nanny' && (
+        {steps[step] === 'Szczegóły' && role === 'nanny' && (
           <>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Opis</label>
@@ -160,11 +231,11 @@ export default function OnboardingPage() {
             </Button>
           )}
           {step < steps.length - 1 ? (
-            <Button onClick={() => setStep((s) => s + 1)} className="flex-1">
+            <Button onClick={() => setStep((s) => s + 1)} disabled={!canAdvance} className="flex-1">
               Dalej
             </Button>
           ) : (
-            <Button onClick={handleFinish} isLoading={isLoading} className="flex-1">
+            <Button onClick={handleFinish} isLoading={isLoading} disabled={!canAdvance} className="flex-1">
               Zakończ
             </Button>
           )}

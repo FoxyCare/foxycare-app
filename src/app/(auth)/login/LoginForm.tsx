@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
 import { translateAuthError, BANNED_ACCOUNT_MESSAGE } from '@/lib/utils'
 
 export default function LoginForm() {
@@ -17,7 +18,11 @@ export default function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(
-    searchParams.get('banned') ? BANNED_ACCOUNT_MESSAGE : null
+    searchParams.get('banned')
+      ? BANNED_ACCOUNT_MESSAGE
+      : searchParams.get('error') === 'oauth'
+        ? 'Logowanie przez zewnętrznego dostawcę nie powiodło się. Spróbuj ponownie.'
+        : null
   )
   const [isLoading, setIsLoading] = useState(false)
 
@@ -93,6 +98,25 @@ export default function LoginForm() {
             Zaloguj się
           </Button>
         </form>
+
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs text-gray-400">lub</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <OAuthButtons onError={setError} />
+        <p className="mt-3 text-center text-xs text-gray-400">
+          Logując się przez zewnętrznego dostawcę, w przypadku nowego konta akceptujesz{' '}
+          <Link href="/terms" target="_blank" className="underline">
+            regulamin
+          </Link>{' '}
+          i{' '}
+          <Link href="/privacy" target="_blank" className="underline">
+            politykę prywatności
+          </Link>
+          .
+        </p>
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Nie masz konta?{' '}
