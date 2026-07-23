@@ -1,12 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
-const PUBLIC_ROUTES = ['/', '/login', '/register', '/search', '/terms', '/privacy']
+// /auth/callback must stay public — it's what *establishes* the session
+// (OAuth code exchange), so requiring a session to reach it would make it
+// unreachable for exactly the case it exists for.
+const PUBLIC_ROUTES = ['/', '/login', '/register', '/search', '/terms', '/privacy', '/auth/callback']
 const AUTH_ROUTES = ['/login', '/register', '/onboarding']
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const { supabaseResponse, user, banned } = await updateSession(request)
+  const { supabaseResponse, user, banned, needsOnboarding } = await updateSession(request)
 
   // Allow public routes — nanny profile pages (/nanny/[id]) require a
   // session, so they are intentionally not in this list.
@@ -30,6 +33,14 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // First OAuth sign-in (Google/Facebook/Apple) hasn't recorded terms
+  // acceptance yet — /auth/callback already sends it here, but this is the
+  // actual enforcement: without it, navigating straight to e.g. /dashboard
+  // would skip consent entirely. See middleware.ts for how this is derived.
+  if (needsOnboarding && pathname !== '/onboarding') {
+    return NextResponse.redirect(new URL('/onboarding', request.url))
   }
 
   return supabaseResponse

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
 import { translateAuthError } from '@/lib/utils'
 import { TERMS_VERSION } from '@/lib/legal/terms'
 import type { UserRole } from '@/types'
@@ -152,6 +153,14 @@ export default function RegisterForm() {
             Zarejestruj się
           </Button>
         </form>
+
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs text-gray-400">lub</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <OAuthButtons disabled={!termsAccepted} role={role} onError={setError} />
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Masz już konto?{' '}

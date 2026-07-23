@@ -10,9 +10,10 @@ Next.js frontend + API for **FoxyCare** — an OLX-style classifieds marketplace
 2. [Folder Structure](#folder-structure)
 3. [Routes](#routes)
 4. [Environment Variables](#environment-variables)
-5. [Local Development](#local-development)
-6. [Testing & Linting](#testing--linting)
-7. [Deployment (Vercel)](#deployment-vercel)
+5. [OAuth Sign-In Setup](#oauth-sign-in-setup)
+6. [Local Development](#local-development)
+7. [Testing & Linting](#testing--linting)
+8. [Deployment (Vercel)](#deployment-vercel)
 
 ---
 
@@ -37,6 +38,9 @@ foxycare-app/
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/                 # /login, /register, /onboarding
+│   │   ├── auth/callback/          # OAuth redirect target (Google/Facebook/Apple) — exchanges
+│   │   │                           #   the code for a session, then routes to /onboarding
+│   │   │                           #   (first sign-in) or /dashboard (returning user)
 │   │   ├── (protected)/            # /dashboard, /profile, /chat — require a session
 │   │   ├── search/                 # /search — public, browsable without an account
 │   │   ├── nanny/[id]/             # /nanny/[id] — a single nanny's public listing; requires a
@@ -55,6 +59,8 @@ foxycare-app/
 │   │   ├── admin/                  # AdminUserList (shared by /admin/nannies and /admin/parents;
 │   │   │                           #   ban/unban + publish/unpublish + delete account)
 │   │   ├── legal/                  # LegalDoc.tsx — Section/P/Ul shared by /terms and /privacy
+│   │   ├── auth/                   # OAuthButtons.tsx — Google/Facebook/Apple, shared by
+│   │   │                           #   /login and /register
 │   │   ├── NannyCard.tsx           # search-results/homepage listing card
 │   │   ├── NannyPhoto.tsx          # shared photo tile (fallback to initials) — NannyCard's
 │   │   │                           #   cover photo and the bigger hero photo on /nanny/[id] and
@@ -85,8 +91,9 @@ foxycare-app/
 | Route | Access | Purpose |
 | ------- | -------- | --------- |
 | `/` | public | Landing page; featured published nanny listings |
-| `/login`, `/register` | public | Auth forms |
-| `/onboarding` | authenticated | First-login profile setup (role-specific) |
+| `/login`, `/register` | public | Auth forms — email/password, or Google/Facebook/Apple via `OAuthButtons` |
+| `/auth/callback` | public (route handler) | OAuth redirect target — see [OAuth Sign-In Setup](#oauth-sign-in-setup) |
+| `/onboarding` | authenticated | First-login profile setup (role-specific); for a first-time OAuth sign-in this also collects role + terms acceptance, since providers don't let us attach that at signup the way email/password does |
 | `/dashboard` | authenticated | Publish status card + quick link to edit (nanny), or a shortcut to search (parent) |
 | `/search` | **public** | Browse and filter **published** nanny listings — no account needed. Reads from the `nanny_public_profiles` view, not `nanny_profiles` directly (see [`foxycare-db`](../foxycare-db) for why). Messaging a nanny from here prompts login. |
 | `/profile` | authenticated | Edit profile — nannies also set title/price/photo here and publish/unpublish their listing; also where a user deletes their own account (RODO Art. 17) |
@@ -124,6 +131,42 @@ Copy `.env.example` to `.env.local` and fill in real values from your Supabase p
 | `NEXT_PUBLIC_APP_URL` | yes | Base URL of the app (`http://localhost:3000` locally) |
 
 No `SUPABASE_SERVICE_ROLE_KEY` is used anywhere in this app. Admin actions (e.g. banning) go through the normal anon-key client, gated by the `users.role = 'admin'` check in `requireAdmin()` and enforced by RLS — deliberately avoiding a bypass-everything key in the deployment.
+
+---
+
+## OAuth Sign-In Setup
+
+`/login` and `/register` both render `OAuthButtons` (Google/Facebook/Apple) alongside the regular email/password form — email/password keeps working exactly as before, OAuth is additive. The app code is ready to go, but each provider needs a one-time setup in **its own developer console** plus enabling it in the **Supabase Dashboard** — none of this can be done from inside this repo, since it requires accounts/credentials this project doesn't have.
+
+### 1. Enable providers in Supabase
+
+Supabase Dashboard → your project → **Authentication → Providers**. Every provider you enable there needs a **Client ID** and **Client Secret** from that provider's own console (steps below), pasted into the matching fields. Supabase shows the exact **Redirect URL** to register with each provider on that same screen — it's always `https://<project-ref>.supabase.co/auth/v1/callback`, the same one for all three providers (this is Supabase's own callback, not this app's `/auth/callback` — the OAuth code lands there first, then Supabase forwards it on to whatever `redirectTo` the app passed, which is how it ends up at `/auth/callback` in this repo).
+
+### 2. Google
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → **Create OAuth client ID** (type: Web application).
+2. Add the Supabase callback URL from step 1 under **Authorized redirect URIs**.
+3. Copy the generated **Client ID** and **Client Secret** into Supabase's Google provider fields.
+
+### 3. Facebook
+
+1. [Meta for Developers](https://developers.facebook.com/) → Create App (type: Consumer) → add the **Facebook Login** product.
+2. Facebook Login → Settings → add the Supabase callback URL under **Valid OAuth Redirect URIs**.
+3. App Settings → Basic: copy the **App ID** and **App Secret** into Supabase's Facebook provider fields.
+4. A Facebook app needs to go through **App Review** (or be run in Development Mode with test users added) before real, non-developer accounts can use it.
+
+### 4. Apple
+
+1. [Apple Developer](https://developer.apple.com/account/) (requires a paid Apple Developer Program membership) → Certificates, Identifiers & Profiles → create a **Services ID** — this is the "Client ID" Supabase asks for.
+2. Under that Services ID's Sign In with Apple configuration, add the Supabase callback URL as the **Return URL**.
+3. Apple's "Client Secret" isn't a static value — it's a signed JWT generated from a private key. Supabase's [Apple provider docs](https://supabase.com/docs/guides/auth/social-login/auth-apple) walk through generating it (Key ID, Team ID, and the `.p8` private key from an App ID's Sign In with Apple key).
+
+### How the flow fits together in this app
+
+- `OAuthButtons` (`src/components/auth/OAuthButtons.tsx`) calls `supabase.auth.signInWithOAuth()` with `redirectTo` pointing at this app's `/auth/callback` — on `/register` it also appends the currently-selected role (`?role=parent|nanny`) so a first-time sign-in respects it; `/login` sends none.
+- `src/app/auth/callback/route.ts` exchanges the code for a session, then checks `users.terms_accepted_at`: already set → `/dashboard` (returning user); still null → applies the role param (if present) and sends the user to `/onboarding`.
+- `/onboarding` shows a mandatory "role + accept terms" step whenever `terms_accepted_at` is null — this is the only path by which an OAuth sign-in records terms acceptance, since providers don't let the app attach custom signup metadata the way `supabase.auth.signUp()` does for email/password.
+- `proxy.ts` is the actual enforcement, not just the happy-path redirect: any authenticated request to a protected route is bounced to `/onboarding` while `terms_accepted_at` is still null, so this can't be skipped by navigating straight to e.g. `/dashboard`.
 
 ---
 

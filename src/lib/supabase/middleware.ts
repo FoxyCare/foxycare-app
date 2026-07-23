@@ -35,15 +35,24 @@ export async function updateSession(request: NextRequest) {
     // existing session needs its own check to be kicked out promptly.
     const { data: profile } = await supabase
       .from('users')
-      .select('is_banned')
+      .select('is_banned, role, terms_accepted_at')
       .eq('id', user.id)
       .single()
 
     if (profile?.is_banned) {
       await supabase.auth.signOut()
-      return { supabaseResponse, user: null, banned: true }
+      return { supabaseResponse, user: null, banned: true, needsOnboarding: false }
     }
+
+    // OAuth sign-ins (Google/Facebook/Apple) can't carry our terms-acceptance
+    // metadata through the provider redirect the way email/password signUp()
+    // does — /auth/callback sends a first-time OAuth user to /onboarding to
+    // collect it, but this is the real enforcement: without it, a user could
+    // just navigate straight to /dashboard and skip consent entirely. Admins
+    // are exempt — they're seeded directly, not through registration.
+    const needsOnboarding = !!profile && profile.role !== 'admin' && !profile.terms_accepted_at
+    return { supabaseResponse, user, banned: false, needsOnboarding }
   }
 
-  return { supabaseResponse, user, banned: false }
+  return { supabaseResponse, user, banned: false, needsOnboarding: false }
 }
