@@ -1,14 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
+import { NannyPhoto } from '@/components/NannyPhoto'
+import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
+import { uploadAvatar } from '@/lib/upload/uploadAvatar'
+import { ImageCompressionError } from '@/lib/upload/compressImage'
 import { TERMS_VERSION } from '@/lib/legal/terms'
-import type { UserRole } from '@/types'
+import type { UserRole, NannyProfile } from '@/types'
+
+const JOB_TYPE_OPTIONS = Object.entries(JOB_TYPE_LABEL).map(([value, label]) => ({ value, label }))
+const AGE_RANGE_OPTIONS = Object.entries(AGE_RANGE_LABEL).map(([value, label]) => ({ value, label }))
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -16,6 +24,9 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Only true for a first-time OAuth (Google/Facebook/Apple) sign-in —
   // email/password signups already recorded terms acceptance at signUp()
@@ -26,16 +37,21 @@ export default function OnboardingPage() {
 
   const [form, setForm] = useState({
     full_name: '',
+    avatar_url: '',
     location: '',
+    title: '',
+    price: '',
+    job_type: [] as string[],
+    children_age_range: [] as string[],
     description: '',
     experience_years: '',
   })
 
   const steps = [
     ...(needsConsent ? ['Rola i regulamin'] : []),
-    'Podstawowe dane',
+    'Zdjęcie i dane',
     'Lokalizacja',
-    ...(role === 'nanny' ? ['Szczegóły'] : []),
+    ...(role === 'nanny' ? ['Tytuł ogłoszenia', 'Typ pracy', 'O sobie'] : []),
   ]
 
   useEffect(() => {
@@ -62,8 +78,33 @@ export default function OnboardingPage() {
     loadRole()
   }, [router])
 
-  function update(field: keyof typeof form, value: string) {
+  function update(field: keyof typeof form, value: string | string[]) {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setAvatarError(null)
+    setIsUploadingAvatar(true)
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const avatarUrl = await uploadAvatar(supabase, user.id, file)
+      update('avatar_url', avatarUrl)
+    } catch (err) {
+      setAvatarError(
+        err instanceof ImageCompressionError ? err.message : 'Nie udało się przesłać zdjęcia.'
+      )
+    } finally {
+      setIsUploadingAvatar(false)
+    }
   }
 
   async function handleFinish() {
@@ -97,8 +138,15 @@ export default function OnboardingPage() {
         return
       }
 
-      const profileBody: Record<string, unknown> = { location: form.location }
+      const profileBody: Record<string, unknown> = {
+        location: form.location,
+        avatar_url: form.avatar_url || undefined,
+      }
       if (role === 'nanny') {
+        profileBody.title = form.title || undefined
+        profileBody.price = form.price ? parseFloat(form.price) : undefined
+        profileBody.job_type = form.job_type as NannyProfile['job_type']
+        profileBody.children_age_range = form.children_age_range as NannyProfile['children_age_range']
         profileBody.description = form.description
         profileBody.experience_years = form.experience_years ? parseInt(form.experience_years, 10) : 0
       }
@@ -186,12 +234,39 @@ export default function OnboardingPage() {
             </label>
           </>
         )}
-        {steps[step] === 'Podstawowe dane' && (
-          <Input
-            label="Imię i nazwisko"
-            value={form.full_name}
-            onChange={(e) => update('full_name', e.target.value)}
-          />
+        {steps[step] === 'Zdjęcie i dane' && (
+          <>
+            <div className="flex flex-col items-center gap-3">
+              <NannyPhoto
+                src={form.avatar_url}
+                name={form.full_name || '?'}
+                className="h-32 w-32 rounded-2xl"
+                initialsClassName="text-3xl"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                isLoading={isUploadingAvatar}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Dodaj zdjęcie
+              </Button>
+              {avatarError && <p className="text-center text-xs text-red-600">{avatarError}</p>}
+            </div>
+            <Input
+              label="Imię i nazwisko"
+              value={form.full_name}
+              onChange={(e) => update('full_name', e.target.value)}
+            />
+          </>
         )}
         {steps[step] === 'Lokalizacja' && (
           <Input
@@ -200,7 +275,42 @@ export default function OnboardingPage() {
             onChange={(e) => update('location', e.target.value)}
           />
         )}
-        {steps[step] === 'Szczegóły' && role === 'nanny' && (
+        {steps[step] === 'Tytuł ogłoszenia' && role === 'nanny' && (
+          <>
+            <Input
+              label="Tytuł ogłoszenia"
+              placeholder="np. Doświadczona niania – Warszawa Mokotów"
+              value={form.title}
+              onChange={(e) => update('title', e.target.value)}
+              helperText="Wymagany, żeby później opublikować profil"
+            />
+            <Input
+              label="Stawka za godzinę (zł, opcjonalnie)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={(e) => update('price', e.target.value)}
+            />
+          </>
+        )}
+        {steps[step] === 'Typ pracy' && role === 'nanny' && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <CheckboxGroup
+              label="Typ pracy"
+              options={JOB_TYPE_OPTIONS}
+              value={form.job_type}
+              onChange={(value) => update('job_type', value)}
+            />
+            <CheckboxGroup
+              label="Wiek dzieci"
+              options={AGE_RANGE_OPTIONS}
+              value={form.children_age_range}
+              onChange={(value) => update('children_age_range', value)}
+            />
+          </div>
+        )}
+        {steps[step] === 'O sobie' && role === 'nanny' && (
           <>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Opis</label>
