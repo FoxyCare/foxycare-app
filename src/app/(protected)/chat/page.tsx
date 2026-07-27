@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { PhoneReveal } from '@/components/PhoneReveal'
 import type { Conversation, Message } from '@/types'
 
 function ChatPageInner() {
@@ -147,6 +148,17 @@ function ChatPageInner() {
             </div>
           ) : (
             <div className="flex h-full flex-col">
+              <div className="flex items-center justify-between gap-3 border-b border-gray-200 p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar name={selectedConversation.other_user?.full_name} size="sm" />
+                  <p className="font-medium text-gray-900">
+                    {selectedConversation.other_user?.full_name ?? 'Nieznany'}
+                  </p>
+                </div>
+                {selectedConversation.other_user && (
+                  <PhoneReveal userId={selectedConversation.other_user.id} size="sm" />
+                )}
+              </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((msg) => {
                   const isOwn = msg.sender_id === currentUserId

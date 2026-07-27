@@ -82,6 +82,21 @@ export interface Message {
   sender?: User
 }
 
+// Mirrors public.contact_phones (foxycare-db migration 0023). The raw
+// `phone` value is only ever readable by its owner (or admin) — other
+// users get it exclusively through the reveal_phone() RPC, never a direct
+// table read. See ContactPhoneStats for the owner-facing reveal count.
+export interface ContactPhone {
+  user_id: string
+  phone?: string
+  phone_visible: boolean
+  updated_at: string
+}
+
+export interface ContactPhoneStats extends ContactPhone {
+  reveal_count: number
+}
+
 export interface AdFilters {
   location?: string
   min_experience?: number

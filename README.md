@@ -48,7 +48,7 @@ foxycare-app/
 │   │   │                           #   nanny_profiles.is_published (RLS) for who it's visible to
 │   │   ├── admin/                  # /admin, /admin/nannies, /admin/parents — role: admin only
 │   │   ├── terms/, privacy/        # /terms, /privacy — public legal pages
-│   │   ├── api/                    # route handlers: conversations, messages, profile, admin/*
+│   │   ├── api/                    # route handlers: conversations, messages, profile, phone-reveal, admin/*
 │   │   ├── layout.tsx, page.tsx    # root layout + landing page
 │   │   ├── error.tsx, not-found.tsx
 │   │   └── globals.css
@@ -65,7 +65,10 @@ foxycare-app/
 │   │   ├── NannyPhoto.tsx          # shared photo tile (fallback to initials) — NannyCard's
 │   │   │                           #   cover photo and the bigger hero photo on /nanny/[id] and
 │   │   │                           #   /profile both use this, not the small circular Avatar
-│   │   └── MessageNannyButton.tsx  # shared "message this nanny" CTA (search, nanny profile)
+│   │   ├── MessageNannyButton.tsx  # shared "message this nanny" CTA (search, nanny profile)
+│   │   └── PhoneReveal.tsx         # "Pokaż numer telefonu" — /nanny/[id] and the /chat header;
+│   │                               #   hidden until clicked, requires login, backed by
+│   │                               #   reveal_phone()/is_phone_shareable() (foxycare-db 0023)
 │   ├── hooks/                      # useUser, useProfile
 │   ├── lib/
 │   │   ├── supabase/               # client.ts, server.ts, middleware.ts, requireAdmin.ts
@@ -96,9 +99,9 @@ foxycare-app/
 | `/onboarding` | authenticated | First-login profile setup (role-specific); for a first-time OAuth sign-in this also collects role + terms acceptance, since providers don't let us attach that at signup the way email/password does |
 | `/dashboard` | authenticated | Publish status card + quick link to edit (nanny), or a shortcut to search (parent) |
 | `/search` | **public** | Browse and filter **published** nanny listings — no account needed. Reads from the `nanny_public_profiles` view, not `nanny_profiles` directly (see [`foxycare-db`](../foxycare-db) for why). Messaging a nanny from here prompts login. |
-| `/profile` | authenticated | Edit profile — nannies also set title/price/photo here and publish/unpublish their listing; also where a user deletes their own account (RODO Art. 17) |
-| `/chat` | authenticated | Conversations and messages |
-| `/nanny/[id]` | authenticated to view; separately gated by publish state | A single nanny's public listing (photo, title, price, description, contact). Requires a session (`proxy.ts`), and — independent of that — RLS only returns the row if it's published, or the caller is the owner or an admin; anyone else gets a 404, not an error |
+| `/profile` | authenticated | Edit profile — nannies also set title/price/photo here and publish/unpublish their listing; phone number + "Udostępnij numer telefonu" toggle and reveal-count stat (both roles); also where a user deletes their own account (RODO Art. 17) |
+| `/chat` | authenticated | Conversations and messages; header shows the other participant's name and a `PhoneReveal` control |
+| `/nanny/[id]` | authenticated to view; separately gated by publish state | A single nanny's public listing (photo, title, price, description, contact, `PhoneReveal`). Requires a session (`proxy.ts`), and — independent of that — RLS only returns the row if it's published, or the caller is the owner or an admin; anyone else gets a 404, not an error |
 | `/admin`, `/admin/nannies`, `/admin/parents` | admin only | Stats overview; filterable nanny/parent lists with ban/unban and (nannies) publish/unpublish |
 | `/terms`, `/privacy` | public | Regulamin / Polityka Prywatności — required acceptance at registration, see [`src/lib/legal/`](src/lib/legal) |
 
@@ -107,6 +110,8 @@ foxycare-app/
 | Route | Methods | Purpose |
 | ------- | --------- | --------- |
 | `/api/profile` | `GET`, `PUT` | Current user's role-specific profile (`parent_profiles`/`nanny_profiles`) — nannies also PUT `title`/`price`/`is_published`/`published_at` here; no separate publish endpoint exists for self-service |
+| `/api/profile/phone` | `GET`, `PUT` | Current user's own `contact_phones` row (phone + `phone_visible` consent toggle) plus `reveal_count` — the number itself never appears in any other endpoint's response |
+| `/api/phone-reveal/[id]` | `GET`, `POST` | `GET` checks whether `[id]`'s number can be revealed at all (`is_phone_shareable`, no auth required — used to decide whether to render the button); `POST` actually reveals it (`reveal_phone`, requires auth, records the reveal for `[id]`'s stat) |
 | `/api/account` | `DELETE` | Deletes the caller's own account — RODO Art. 17 self-service. Removes the avatar from Storage, then calls `delete_user_account` (see [`foxycare-db`](../foxycare-db)'s migration 0022); everything else cascades at the DB level |
 | `/api/conversations` | `GET`, `POST` | List the caller's conversations; find-or-create one with another user |
 | `/api/messages` | `GET`, `POST` | Messages within a conversation |

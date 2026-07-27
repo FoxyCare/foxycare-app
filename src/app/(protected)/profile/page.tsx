@@ -33,6 +33,9 @@ export default function ProfilePage() {
   const [publishError, setPublishError] = useState<string | null>(null)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [phone, setPhone] = useState('')
+  const [phoneVisible, setPhoneVisible] = useState(false)
+  const [revealCount, setRevealCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isNanny = user.role === 'nanny'
@@ -72,6 +75,14 @@ export default function ProfilePage() {
         if (profileRow) setRoleProfile(profileRow)
       }
 
+      const phoneRes = await fetch('/api/profile/phone')
+      if (phoneRes.ok) {
+        const phoneBody = await phoneRes.json()
+        setPhone(phoneBody.phone ?? '')
+        setPhoneVisible(phoneBody.phone_visible)
+        setRevealCount(phoneBody.reveal_count)
+      }
+
       setIsLoading(false)
     }
 
@@ -103,10 +114,19 @@ export default function ProfilePage() {
       })
       const body = await res.json()
 
+      const phoneRes = await fetch('/api/profile/phone', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone || null, phone_visible: phoneVisible }),
+      })
+      const phoneBody = await phoneRes.json()
+
       if (userError) {
         setError(userError.message)
       } else if (!res.ok) {
         setError(body.error ?? 'Nie udało się zapisać profilu')
+      } else if (!phoneRes.ok) {
+        setError(phoneBody.error ?? 'Nie udało się zapisać numeru telefonu')
       } else {
         setSuccess(true)
         router.refresh()
@@ -269,6 +289,33 @@ export default function ProfilePage() {
                 value={roleProfile.location ?? ''}
                 onChange={(e) => setRoleProfile((p) => ({ ...p, location: e.target.value }))}
               />
+
+              <Input
+                label="Numer telefonu"
+                type="tel"
+                placeholder="np. 600 123 456"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <label className="flex items-start gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={phoneVisible}
+                  onChange={(e) => setPhoneVisible(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span>
+                  Udostępnij numer telefonu — inni użytkownicy będą mogli go zobaczyć na Twoim
+                  profilu po kliknięciu &quot;Pokaż numer telefonu&quot; (domyślnie ukryty, wymaga
+                  zalogowania).
+                </span>
+              </label>
+              {phoneVisible && (
+                <p className="text-xs text-gray-500">
+                  Twój numer odsłoniło dotychczas: <span className="font-medium">{revealCount}</span>{' '}
+                  {revealCount === 1 ? 'osoba' : 'osób'}.
+                </p>
+              )}
 
               {isNanny && (
                 <>
