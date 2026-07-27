@@ -82,19 +82,40 @@ export interface Message {
   sender?: User
 }
 
-// Mirrors public.contact_phones (foxycare-db migration 0023). The raw
-// `phone` value is only ever readable by its owner (or admin) — other
-// users get it exclusively through the reveal_phone() RPC, never a direct
-// table read. See ContactPhoneStats for the owner-facing reveal count.
-export interface ContactPhone {
-  user_id: string
-  phone?: string
-  phone_visible: boolean
-  updated_at: string
+// Mirrors public.report_reason / public.report_status (foxycare-db
+// migration 0025).
+export type ReportReason = 'inappropriate_content' | 'harassment' | 'fraud' | 'fake_profile' | 'other'
+export type ReportStatus = 'pending' | 'resolved' | 'dismissed'
+
+export interface ReportAttachment {
+  id: string
+  report_id: string
+  storage_path: string
+  file_name: string
+  content_type?: string
+  size_bytes?: number
+  created_at: string
 }
 
-export interface ContactPhoneStats extends ContactPhone {
-  reveal_count: number
+export interface Report {
+  id: string
+  reporter_id: string
+  reported_id: string
+  reason: ReportReason
+  description: string
+  status: ReportStatus
+  resolved_by?: string
+  resolved_at?: string
+  created_at: string
+}
+
+// GET /api/admin/reports — enriched with the names admins need to triage a
+// report, plus attachments with a short-lived signed URL each (the bucket
+// isn't public, see foxycare-db migration 0025).
+export interface AdminReportRow extends Report {
+  reporter: { id: string; full_name: string; email: string } | null
+  reported: { id: string; full_name: string; email: string; role: UserRole; is_banned: boolean } | null
+  attachments: (ReportAttachment & { url: string | null })[]
 }
 
 export interface AdFilters {

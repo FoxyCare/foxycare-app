@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { MessageNannyButton } from '@/components/MessageNannyButton'
 import { PhoneReveal } from '@/components/PhoneReveal'
+import { ReportUserButton } from '@/components/ReportUserButton'
 import { NannyPhoto } from '@/components/NannyPhoto'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -111,6 +112,7 @@ export default async function NannyProfilePage({
                   <div className="flex flex-col items-stretch gap-2">
                     <MessageNannyButton nannyId={id} />
                     <PhoneReveal userId={id} />
+                    <ReportUserButton reportedUserId={id} size="sm" />
                   </div>
                 )}
               </div>

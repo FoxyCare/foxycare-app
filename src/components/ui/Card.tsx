@@ -44,18 +44,4 @@ function CardContent({ className, children, ...props }: CardProps) {
   )
 }
 
-function CardFooter({ className, children, ...props }: CardProps) {
-  return (
-    <div
-      className={cn(
-        'flex items-center border-t border-gray-100 p-6 pt-4',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  )
-}
-
-export { Card, CardHeader, CardTitle, CardContent, CardFooter }
+export { Card, CardHeader, CardTitle, CardContent }

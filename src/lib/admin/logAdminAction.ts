@@ -8,7 +8,7 @@ export async function logAdminAction(
   supabase: SupabaseClient,
   adminId: string,
   targetUserId: string,
-  action: 'ban' | 'unban' | 'publish' | 'unpublish' | 'delete_account'
+  action: 'ban' | 'unban' | 'publish' | 'unpublish' | 'delete_account' | 'resolve_report' | 'dismiss_report'
 ): Promise<void> {
   await supabase.from('admin_actions').insert({
     admin_id: adminId,

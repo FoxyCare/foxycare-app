@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/supabase/requireAdmin'
 import { logAdminAction } from '@/lib/admin/logAdminAction'
 import { deleteAvatar } from '@/lib/upload/uploadAvatar'
+import { deleteReportAttachmentsForUser } from '@/lib/upload/uploadReportAttachment'
 
 // Admin-triggered Art. 17 fulfilment — for accounts that can't act for
 // themselves via /api/account (e.g. a banned user requesting erasure by
@@ -26,6 +27,7 @@ export async function POST(
   await logAdminAction(supabase, adminCheck, id, 'delete_account')
 
   await deleteAvatar(supabase, id)
+  await deleteReportAttachmentsForUser(supabase, id)
 
   const { error } = await supabase.rpc('delete_user_account', { target_id: id })
   if (error) {
