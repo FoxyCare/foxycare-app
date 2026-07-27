@@ -13,6 +13,7 @@ import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
 import { uploadAvatar } from '@/lib/upload/uploadAvatar'
 import { ImageCompressionError } from '@/lib/upload/compressImage'
 import { TERMS_VERSION } from '@/lib/legal/terms'
+import { isValidPhone } from '@/lib/phone'
 import type { UserRole, NannyProfile } from '@/types'
 
 const JOB_TYPE_OPTIONS = Object.entries(JOB_TYPE_LABEL).map(([value, label]) => ({ value, label }))
@@ -45,6 +46,11 @@ export default function OnboardingPage() {
     children_age_range: [] as string[],
     description: '',
     experience_years: '',
+    phone: '',
+    // Nudge new users toward sharing by default — they can still opt out
+    // by unchecking the box, which is why validation below only requires
+    // a valid phone when this stays true.
+    phone_visible: true,
   })
 
   const steps = [
@@ -109,6 +115,16 @@ export default function OnboardingPage() {
 
   async function handleFinish() {
     setError(null)
+
+    // Belt-and-suspenders: canAdvance already keeps the "Dalej" button on the
+    // photo step disabled until this holds, so this should be unreachable —
+    // but handleFinish shouldn't trust UI gating alone to avoid saving a
+    // phone_visible=true row with no usable phone behind it.
+    if (!phoneValid) {
+      setError('Podaj poprawny numer telefonu, aby go udostępnić, lub odznacz zgodę.')
+      return
+    }
+
     setIsLoading(true)
     try {
       const supabase = createClient()
@@ -163,6 +179,17 @@ export default function OnboardingPage() {
         return
       }
 
+      const phoneRes = await fetch('/api/profile/phone', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: form.phone || null, phone_visible: form.phone_visible }),
+      })
+      if (!phoneRes.ok) {
+        const body = await phoneRes.json()
+        setError(body.error ?? 'Nie udało się zapisać numeru telefonu')
+        return
+      }
+
       router.push('/dashboard')
       router.refresh()
     } finally {
@@ -171,7 +198,9 @@ export default function OnboardingPage() {
   }
 
   const onConsentStep = steps[step] === 'Rola i regulamin'
-  const canAdvance = !onConsentStep || termsAccepted
+  const onPhotoStep = steps[step] === 'Zdjęcie i dane'
+  const phoneValid = !form.phone_visible || isValidPhone(form.phone)
+  const canAdvance = (!onConsentStep || termsAccepted) && (!onPhotoStep || phoneValid)
 
   return (
     <Card className="w-full max-w-lg">
@@ -266,6 +295,33 @@ export default function OnboardingPage() {
               value={form.full_name}
               onChange={(e) => update('full_name', e.target.value)}
             />
+            <Input
+              label="Numer telefonu"
+              type="tel"
+              placeholder="np. 600 123 456"
+              value={form.phone}
+              onChange={(e) => update('phone', e.target.value)}
+            />
+            <label className="flex items-start gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={form.phone_visible}
+                onChange={(e) => setForm((f) => ({ ...f, phone_visible: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span>
+                Udostępnij numer telefonu — inni użytkownicy będą mogli go zobaczyć na Twoim
+                profilu po kliknięciu &quot;Pokaż numer telefonu&quot; (domyślnie ukryty, wymaga
+                zalogowania). Możesz to zmienić później w Mój profil.
+              </span>
+            </label>
+            {!phoneValid && (
+              <p className="text-xs text-red-600">
+                {form.phone
+                  ? 'Nieprawidłowy numer telefonu (np. 600 123 456).'
+                  : 'Podaj numer telefonu, aby go udostępnić, lub odznacz zgodę powyżej.'}
+              </p>
+            )}
           </>
         )}
         {steps[step] === 'Lokalizacja' && (

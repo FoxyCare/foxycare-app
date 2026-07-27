@@ -12,6 +12,7 @@ import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
 import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
 import { uploadAvatar } from '@/lib/upload/uploadAvatar'
 import { ImageCompressionError } from '@/lib/upload/compressImage'
+import { isValidPhone } from '@/lib/phone'
 import type { NannyProfile, ParentProfile, User } from '@/types'
 
 const JOB_TYPE_OPTIONS = Object.entries(JOB_TYPE_LABEL).map(([value, label]) => ({ value, label }))
@@ -33,9 +34,13 @@ export default function ProfilePage() {
   const [publishError, setPublishError] = useState<string | null>(null)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [phone, setPhone] = useState('')
+  const [phoneVisible, setPhoneVisible] = useState(false)
+  const [revealCount, setRevealCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isNanny = user.role === 'nanny'
+  const phoneValid = !phoneVisible || isValidPhone(phone)
 
   useEffect(() => {
     async function loadProfile() {
@@ -72,6 +77,14 @@ export default function ProfilePage() {
         if (profileRow) setRoleProfile(profileRow)
       }
 
+      const phoneRes = await fetch('/api/profile/phone')
+      if (phoneRes.ok) {
+        const phoneBody = await phoneRes.json()
+        setPhone(phoneBody.phone ?? '')
+        setPhoneVisible(phoneBody.phone_visible)
+        setRevealCount(phoneBody.reveal_count)
+      }
+
       setIsLoading(false)
     }
 
@@ -82,6 +95,16 @@ export default function ProfilePage() {
     e.preventDefault()
     setError(null)
     setSuccess(false)
+
+    // Mirrors the check the button's disabled state already enforces —
+    // kept here too so this function never sends /api/profile/phone a
+    // phone_visible=true row with no usable phone behind it, regardless of
+    // how it's called.
+    if (!phoneValid) {
+      setError('Podaj poprawny numer telefonu, aby go udostępnić, lub odznacz zgodę.')
+      return
+    }
+
     setIsSaving(true)
 
     try {
@@ -103,10 +126,19 @@ export default function ProfilePage() {
       })
       const body = await res.json()
 
+      const phoneRes = await fetch('/api/profile/phone', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone || null, phone_visible: phoneVisible }),
+      })
+      const phoneBody = await phoneRes.json()
+
       if (userError) {
         setError(userError.message)
       } else if (!res.ok) {
         setError(body.error ?? 'Nie udało się zapisać profilu')
+      } else if (!phoneRes.ok) {
+        setError(phoneBody.error ?? 'Nie udało się zapisać numeru telefonu')
       } else {
         setSuccess(true)
         router.refresh()
@@ -270,6 +302,40 @@ export default function ProfilePage() {
                 onChange={(e) => setRoleProfile((p) => ({ ...p, location: e.target.value }))}
               />
 
+              <Input
+                label="Numer telefonu"
+                type="tel"
+                placeholder="np. 600 123 456"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <label className="flex items-start gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={phoneVisible}
+                  onChange={(e) => setPhoneVisible(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span>
+                  Udostępnij numer telefonu — inni użytkownicy będą mogli go zobaczyć na Twoim
+                  profilu po kliknięciu &quot;Pokaż numer telefonu&quot; (domyślnie ukryty, wymaga
+                  zalogowania).
+                </span>
+              </label>
+              {!phoneValid && (
+                <p className="text-xs text-red-600">
+                  {phone
+                    ? 'Nieprawidłowy numer telefonu (np. 600 123 456).'
+                    : 'Podaj numer telefonu, aby go udostępnić, lub odznacz zgodę powyżej.'}
+                </p>
+              )}
+              {phoneVisible && (
+                <p className="text-xs text-gray-500">
+                  Twój numer odsłoniło dotychczas: <span className="font-medium">{revealCount}</span>{' '}
+                  {revealCount === 1 ? 'osoba' : 'osób'}.
+                </p>
+              )}
+
               {isNanny && (
                 <>
                   <Input
@@ -350,7 +416,7 @@ export default function ProfilePage() {
                 <p className="rounded-lg bg-green-50 p-3 text-sm text-green-600">Zapisano zmiany!</p>
               )}
 
-              <Button type="submit" isLoading={isSaving}>
+              <Button type="submit" isLoading={isSaving} disabled={!phoneValid}>
                 Zapisz zmiany
               </Button>
             </form>

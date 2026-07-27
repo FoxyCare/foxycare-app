@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { MessageNannyButton } from '@/components/MessageNannyButton'
+import { PhoneReveal } from '@/components/PhoneReveal'
 import { NannyPhoto } from '@/components/NannyPhoto'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -106,7 +107,12 @@ export default async function NannyProfilePage({
                     ))}
                   </div>
                 </div>
-                {!isOwnProfile && <MessageNannyButton nannyId={id} />}
+                {!isOwnProfile && (
+                  <div className="flex flex-col items-stretch gap-2">
+                    <MessageNannyButton nannyId={id} />
+                    <PhoneReveal userId={id} />
+                  </div>
+                )}
               </div>
               {nannyProfile.description && (
                 <p className="mt-6 whitespace-pre-line text-gray-700">{nannyProfile.description}</p>
