@@ -12,6 +12,7 @@ import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
 import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
 import { uploadAvatar } from '@/lib/upload/uploadAvatar'
 import { ImageCompressionError } from '@/lib/upload/compressImage'
+import { isValidPhone } from '@/lib/phone'
 import type { NannyProfile, ParentProfile, User } from '@/types'
 
 const JOB_TYPE_OPTIONS = Object.entries(JOB_TYPE_LABEL).map(([value, label]) => ({ value, label }))
@@ -39,6 +40,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isNanny = user.role === 'nanny'
+  const phoneValid = !phoneVisible || isValidPhone(phone)
 
   useEffect(() => {
     async function loadProfile() {
@@ -93,6 +95,16 @@ export default function ProfilePage() {
     e.preventDefault()
     setError(null)
     setSuccess(false)
+
+    // Mirrors the check the button's disabled state already enforces —
+    // kept here too so this function never sends /api/profile/phone a
+    // phone_visible=true row with no usable phone behind it, regardless of
+    // how it's called.
+    if (!phoneValid) {
+      setError('Podaj poprawny numer telefonu, aby go udostępnić, lub odznacz zgodę.')
+      return
+    }
+
     setIsSaving(true)
 
     try {
@@ -310,6 +322,13 @@ export default function ProfilePage() {
                   zalogowania).
                 </span>
               </label>
+              {!phoneValid && (
+                <p className="text-xs text-red-600">
+                  {phone
+                    ? 'Nieprawidłowy numer telefonu (np. 600 123 456).'
+                    : 'Podaj numer telefonu, aby go udostępnić, lub odznacz zgodę powyżej.'}
+                </p>
+              )}
               {phoneVisible && (
                 <p className="text-xs text-gray-500">
                   Twój numer odsłoniło dotychczas: <span className="font-medium">{revealCount}</span>{' '}
@@ -397,7 +416,7 @@ export default function ProfilePage() {
                 <p className="rounded-lg bg-green-50 p-3 text-sm text-green-600">Zapisano zmiany!</p>
               )}
 
-              <Button type="submit" isLoading={isSaving}>
+              <Button type="submit" isLoading={isSaving} disabled={!phoneValid}>
                 Zapisz zmiany
               </Button>
             </form>

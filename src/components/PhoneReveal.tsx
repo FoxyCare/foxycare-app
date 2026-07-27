@@ -8,8 +8,8 @@ import { Button, type ButtonProps } from '@/components/ui/Button'
 // "Pokaż numer telefonu" — hidden by default, requires login, reveals via
 // POST /api/phone-reveal/[id] (foxycare-db's reveal_phone() RPC, which also
 // records the reveal for the owner's own stat). shareable is checked up
-// front via GET on the same route so the button doesn't render at all when
-// there's nothing to reveal.
+// front via GET on the same route; while unknown (still loading) nothing
+// renders, otherwise either the reveal button or a "not shared" note.
 export function PhoneReveal({
   userId,
   className,
@@ -21,7 +21,7 @@ export function PhoneReveal({
 }) {
   const router = useRouter()
   const { user } = useUser()
-  const [shareable, setShareable] = useState(false)
+  const [shareable, setShareable] = useState<boolean | null>(null)
   const [phone, setPhone] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,7 +58,15 @@ export function PhoneReveal({
     }
   }, [user, userId, router])
 
-  if (!shareable) return null
+  if (shareable === null) return null
+
+  if (!shareable) {
+    return (
+      <p className={`text-sm text-gray-400 ${className ?? ''}`}>
+        📞 Numer telefonu nie został udostępniony
+      </p>
+    )
+  }
 
   if (phone) {
     return (

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { isValidPhone } from '@/lib/phone'
 
 // Self-service management of the caller's own phone number + "Udostępnij
 // numer telefonu" consent toggle, plus how many people have revealed it.
@@ -53,6 +54,18 @@ export async function PUT(request: Request) {
   }
 
   const { phone, phone_visible } = await request.json()
+
+  // Sharing a number with no (or an unparseable) value behind it is a
+  // nonsensical state — contact_phones' chk_contact_phones_visible_requires_phone
+  // constraint blocks the "empty" half at the DB level as a last resort, but
+  // this is the actual boundary: it also catches garbage input the DB check
+  // can't (it only knows "non-empty", not "looks like a phone number").
+  if (phone_visible && !isValidPhone(phone ?? '')) {
+    return NextResponse.json(
+      { error: 'Podaj poprawny numer telefonu (np. 600 123 456), aby go udostępnić.' },
+      { status: 400 }
+    )
+  }
 
   const { data, error } = await supabase
     .from('contact_phones')
