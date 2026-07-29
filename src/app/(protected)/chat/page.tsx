@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { PhoneReveal } from '@/components/PhoneReveal'
+import { ReportUserButton } from '@/components/ReportUserButton'
 import type { Conversation, Message } from '@/types'
 
 function ChatPageInner() {
@@ -156,7 +157,10 @@ function ChatPageInner() {
                   </p>
                 </div>
                 {selectedConversation.other_user && (
-                  <PhoneReveal userId={selectedConversation.other_user.id} size="sm" />
+                  <div className="flex items-center gap-2">
+                    <PhoneReveal userId={selectedConversation.other_user.id} size="sm" />
+                    <ReportUserButton reportedUserId={selectedConversation.other_user.id} size="sm" />
+                  </div>
                 )}
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">

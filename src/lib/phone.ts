@@ -2,7 +2,7 @@
 // optional spaces/dashes as separators (e.g. "600 123 456", "+48 600-123-456").
 const PHONE_REGEX = /^(?:\+48|0048)?\d{9}$/
 
-export function normalizePhone(raw: string): string {
+function normalizePhone(raw: string): string {
   return raw.replace(/[\s-]/g, '')
 }
 

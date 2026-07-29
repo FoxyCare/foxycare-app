@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { deleteAvatar } from '@/lib/upload/uploadAvatar'
+import { deleteReportAttachmentsForUser } from '@/lib/upload/uploadReportAttachment'
 
 // Self-service Art. 17 ("right to be forgotten") fulfilment. Deletes the
 // caller's own account — RLS inside delete_user_account (foxycare-db
@@ -18,6 +19,7 @@ export async function DELETE() {
   }
 
   await deleteAvatar(supabase, user.id)
+  await deleteReportAttachmentsForUser(supabase, user.id)
 
   const { error } = await supabase.rpc('delete_user_account', { target_id: user.id })
   if (error) {
