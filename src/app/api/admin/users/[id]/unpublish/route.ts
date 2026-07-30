@@ -12,8 +12,18 @@ export async function POST(
   const adminCheck = await requireAdmin(supabase)
   if (adminCheck instanceof NextResponse) return adminCheck
 
+  const { data: targetUser, error: userError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', id)
+    .single()
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 })
+  }
+
+  const profileTable = targetUser.role === 'nanny' ? 'nanny_profiles' : 'parent_profiles'
   const { error } = await supabase
-    .from('nanny_profiles')
+    .from(profileTable)
     .update({ is_published: false })
     .eq('user_id', id)
   if (error) {

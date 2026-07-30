@@ -336,15 +336,17 @@ export default function ProfilePage() {
                 </p>
               )}
 
+              <Input
+                label="Tytuł ogłoszenia"
+                placeholder={
+                  isNanny ? 'np. Doświadczona niania – Warszawa Mokotów' : 'np. Szukamy niani – Warszawa Mokotów'
+                }
+                value={roleProfile.title ?? ''}
+                onChange={(e) => setRoleProfile((p) => ({ ...p, title: e.target.value }))}
+                helperText="Wymagany do publikacji profilu"
+              />
               {isNanny && (
                 <>
-                  <Input
-                    label="Tytuł ogłoszenia"
-                    placeholder="np. Doświadczona niania – Warszawa Mokotów"
-                    value={roleProfile.title ?? ''}
-                    onChange={(e) => setRoleProfile((p) => ({ ...p, title: e.target.value }))}
-                    helperText="Wymagany do publikacji profilu"
-                  />
                   <Input
                     label="Doświadczenie (lata)"
                     type="number"
@@ -370,46 +372,52 @@ export default function ProfilePage() {
                       }))
                     }
                   />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <CheckboxGroup
-                      label="Typ pracy"
-                      options={JOB_TYPE_OPTIONS}
-                      value={roleProfile.job_type ?? []}
-                      onChange={(value) =>
-                        setRoleProfile((p) => ({
-                          ...p,
-                          job_type: value as NannyProfile['job_type'],
-                        }))
-                      }
-                    />
-                    <CheckboxGroup
-                      label="Wiek dzieci"
-                      options={AGE_RANGE_OPTIONS}
-                      value={roleProfile.children_age_range ?? []}
-                      onChange={(value) =>
-                        setRoleProfile((p) => ({
-                          ...p,
-                          children_age_range: value as NannyProfile['children_age_range'],
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium text-gray-700">Opis</label>
-                    <textarea
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                      rows={4}
-                      value={roleProfile.description ?? ''}
-                      onChange={(e) => setRoleProfile((p) => ({ ...p, description: e.target.value }))}
-                      placeholder="Opowiedz o sobie..."
-                    />
-                    <p className="text-xs text-gray-400">
-                      Opis jest publiczny — nie zamieszczaj w nim danych szczególnie wrażliwych
-                      (np. o stanie zdrowia, wyznaniu) ani danych osobowych dzieci.
-                    </p>
-                  </div>
                 </>
               )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <CheckboxGroup
+                  label="Typ pracy"
+                  options={JOB_TYPE_OPTIONS}
+                  value={roleProfile.job_type ?? []}
+                  onChange={(value) =>
+                    setRoleProfile((p) => ({
+                      ...p,
+                      job_type: value as NannyProfile['job_type'],
+                    }))
+                  }
+                />
+                <CheckboxGroup
+                  label="Wiek dzieci"
+                  options={AGE_RANGE_OPTIONS}
+                  value={roleProfile.children_age_range ?? []}
+                  onChange={(value) =>
+                    setRoleProfile((p) => ({
+                      ...p,
+                      children_age_range: value as NannyProfile['children_age_range'],
+                    }))
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Opis</label>
+                {!isNanny && (
+                  <p className="text-xs text-gray-500">
+                    Opisz swoją rodzinę, dziecko i jakiej opieki szukasz. To ułatwi Ci znaleźć
+                    odpowiednią opiekę dla Twojego dziecka.
+                  </p>
+                )}
+                <textarea
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  rows={4}
+                  value={roleProfile.description ?? ''}
+                  onChange={(e) => setRoleProfile((p) => ({ ...p, description: e.target.value }))}
+                  placeholder={isNanny ? 'Opowiedz o sobie...' : 'Opowiedz o swojej rodzinie...'}
+                />
+                <p className="text-xs text-gray-400">
+                  Opis jest publiczny — nie zamieszczaj w nim danych szczególnie wrażliwych
+                  (np. o stanie zdrowia, wyznaniu) ani danych osobowych dzieci.
+                </p>
+              </div>
 
               {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
               {success && (
@@ -424,38 +432,40 @@ export default function ProfilePage() {
         </Card>
       </div>
 
-      {isNanny && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Publikacja profilu</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="flex items-center gap-2 text-sm text-gray-700">
-              Status:
-              <Badge variant={roleProfile.is_published ? 'success' : 'default'}>
-                {roleProfile.is_published ? 'Opublikowany' : 'Nieopublikowany'}
-              </Badge>
-            </p>
-            <p className="mt-2 text-sm text-gray-500">
-              {roleProfile.is_published
+      <Card>
+        <CardHeader>
+          <CardTitle>Publikacja profilu</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="flex items-center gap-2 text-sm text-gray-700">
+            Status:
+            <Badge variant={roleProfile.is_published ? 'success' : 'default'}>
+              {roleProfile.is_published ? 'Opublikowany' : 'Nieopublikowany'}
+            </Badge>
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            {isNanny
+              ? roleProfile.is_published
                 ? 'Twój profil jest widoczny dla rodziców w wyszukiwarce. Możesz go w każdej chwili ukryć.'
-                : 'Twój profil nie jest jeszcze widoczny dla rodziców — opublikuj go, żeby pojawił się w wyszukiwarce.'}
-            </p>
-            {publishError && (
-              <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">{publishError}</p>
-            )}
-            <Button
-              type="button"
-              variant={roleProfile.is_published ? 'outline' : 'primary'}
-              className="mt-4"
-              isLoading={isPublishing}
-              onClick={handleTogglePublish}
-            >
-              {roleProfile.is_published ? 'Cofnij publikację' : 'Opublikuj profil'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+                : 'Twój profil nie jest jeszcze widoczny dla rodziców — opublikuj go, żeby pojawił się w wyszukiwarce.'
+              : roleProfile.is_published
+                ? 'Twój profil jest widoczny dla niań w wyszukiwarce. Możesz go w każdej chwili ukryć.'
+                : 'Twój profil nie jest jeszcze widoczny dla niań — opublikuj go, żeby pojawił się w wyszukiwarce.'}
+          </p>
+          {publishError && (
+            <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">{publishError}</p>
+          )}
+          <Button
+            type="button"
+            variant={roleProfile.is_published ? 'outline' : 'primary'}
+            className="mt-4"
+            isLoading={isPublishing}
+            onClick={handleTogglePublish}
+          >
+            {roleProfile.is_published ? 'Cofnij publikację' : 'Opublikuj profil'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

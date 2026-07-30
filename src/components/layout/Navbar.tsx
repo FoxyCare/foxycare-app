@@ -45,6 +45,11 @@ export function Navbar({ profile }: NavbarProps) {
                   Znajdź nianię
                 </Link>
               )}
+              {profile.role === 'nanny' && (
+                <Link href="/search" className="text-sm font-medium text-gray-700 hover:text-brand-600">
+                  Znajdź rodzinę
+                </Link>
+              )}
               <Link href="/chat" className="text-sm font-medium text-gray-700 hover:text-brand-600">
                 Wiadomości
               </Link>

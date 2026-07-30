@@ -14,11 +14,20 @@ export interface User {
   updated_at: string
 }
 
+// A parent's profile IS her listing too, since foxycare-db migration 0032 —
+// mirrors NannyProfile minus experience_years/price, which don't describe
+// a family looking for care the way they describe a nanny offering it.
 export interface ParentProfile {
   id: string
   user_id: string
+  title?: string
+  description?: string
+  children_age_range?: ChildrenAgeRange[]
+  job_type?: JobType[]
   location?: string
   avatar_url?: string
+  is_published: boolean
+  published_at?: string
   created_at: string
   updated_at: string
 }
@@ -58,6 +67,22 @@ export interface NannyPublicProfile {
   description?: string
   title?: string
   price?: number
+  published_at?: string
+}
+
+// Mirrors public.parent_public_profiles (foxycare-db migration 0032) — the
+// authenticated-facing (not anon), published-only projection /search reads
+// from when a nanny is browsing. No experience_years/price, unlike
+// NannyPublicProfile.
+export interface ParentPublicProfile {
+  id: string
+  full_name: string
+  avatar_url?: string
+  location?: string
+  job_type?: JobType[]
+  children_age_range?: ChildrenAgeRange[]
+  description?: string
+  title?: string
   published_at?: string
 }
 

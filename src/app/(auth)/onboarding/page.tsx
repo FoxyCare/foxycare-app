@@ -53,11 +53,19 @@ export default function OnboardingPage() {
     phone_visible: true,
   })
 
+  // Both roles now build a full listing (foxycare-db migration 0032 gave
+  // parent_profiles the same title/job_type/children_age_range/description
+  // shape as nanny_profiles, minus experience_years/price) — so every step
+  // below renders for both roles now; only individual fields within a step
+  // (price, experience_years) stay nanny-only.
   const steps = [
     ...(needsConsent ? ['Rola i regulamin'] : []),
     'Zdjęcie i dane',
     'Lokalizacja',
-    ...(role === 'nanny' ? ['Tytuł ogłoszenia', 'Typ pracy', 'O sobie'] : []),
+    'Tytuł ogłoszenia',
+    'Typ pracy',
+    'O sobie',
+    'Zasady konta',
   ]
 
   useEffect(() => {
@@ -157,13 +165,13 @@ export default function OnboardingPage() {
       const profileBody: Record<string, unknown> = {
         location: form.location,
         avatar_url: form.avatar_url || undefined,
+        title: form.title || undefined,
+        job_type: form.job_type as NannyProfile['job_type'],
+        children_age_range: form.children_age_range as NannyProfile['children_age_range'],
+        description: form.description,
       }
       if (role === 'nanny') {
-        profileBody.title = form.title || undefined
         profileBody.price = form.price ? parseFloat(form.price) : undefined
-        profileBody.job_type = form.job_type as NannyProfile['job_type']
-        profileBody.children_age_range = form.children_age_range as NannyProfile['children_age_range']
-        profileBody.description = form.description
         profileBody.experience_years = form.experience_years ? parseInt(form.experience_years, 10) : 0
       }
 
@@ -331,26 +339,32 @@ export default function OnboardingPage() {
             onChange={(e) => update('location', e.target.value)}
           />
         )}
-        {steps[step] === 'Tytuł ogłoszenia' && role === 'nanny' && (
+        {steps[step] === 'Tytuł ogłoszenia' && (
           <>
             <Input
               label="Tytuł ogłoszenia"
-              placeholder="np. Doświadczona niania – Warszawa Mokotów"
+              placeholder={
+                role === 'nanny'
+                  ? 'np. Doświadczona niania – Warszawa Mokotów'
+                  : 'np. Szukamy niani – Warszawa Mokotów'
+              }
               value={form.title}
               onChange={(e) => update('title', e.target.value)}
               helperText="Wymagany, żeby później opublikować profil"
             />
-            <Input
-              label="Stawka za godzinę (zł, opcjonalnie)"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.price}
-              onChange={(e) => update('price', e.target.value)}
-            />
+            {role === 'nanny' && (
+              <Input
+                label="Stawka za godzinę (zł, opcjonalnie)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => update('price', e.target.value)}
+              />
+            )}
           </>
         )}
-        {steps[step] === 'Typ pracy' && role === 'nanny' && (
+        {steps[step] === 'Typ pracy' && (
           <div className="grid gap-4 sm:grid-cols-2">
             <CheckboxGroup
               label="Typ pracy"
@@ -366,26 +380,50 @@ export default function OnboardingPage() {
             />
           </div>
         )}
-        {steps[step] === 'O sobie' && role === 'nanny' && (
+        {steps[step] === 'O sobie' && (
           <>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Opis</label>
+              {role !== 'nanny' && (
+                <p className="text-xs text-gray-500">
+                  Opisz swoją rodzinę, dziecko i jakiej opieki szukasz. To ułatwi Ci znaleźć
+                  odpowiednią opiekę dla Twojego dziecka.
+                </p>
+              )}
               <textarea
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 rows={4}
                 value={form.description}
                 onChange={(e) => update('description', e.target.value)}
-                placeholder="Opowiedz rodzinom o sobie..."
+                placeholder={role === 'nanny' ? 'Opowiedz rodzinom o sobie...' : 'Opowiedz nianiom o swojej rodzinie...'}
               />
             </div>
-            <Input
-              label="Lata doświadczenia"
-              type="number"
-              min="0"
-              value={form.experience_years}
-              onChange={(e) => update('experience_years', e.target.value)}
-            />
+            {role === 'nanny' && (
+              <Input
+                label="Lata doświadczenia"
+                type="number"
+                min="0"
+                value={form.experience_years}
+                onChange={(e) => update('experience_years', e.target.value)}
+              />
+            )}
           </>
+        )}
+
+        {steps[step] === 'Zasady konta' && (
+          <div className="rounded-lg bg-brand-50 p-4 text-sm text-brand-900">
+            <p className="font-medium">🔒 Twoje konto jest domyślnie niepubliczne</p>
+            <p className="mt-2">
+              {role === 'nanny'
+                ? 'Możesz od razu przeglądać profile rodziców w wyszukiwarce — ale rodzice nie zobaczą Twojego profilu, dopóki go nie opublikujesz.'
+                : 'Możesz od razu przeglądać profile niań w wyszukiwarce — ale nianie nie zobaczą Twojego profilu, dopóki go nie opublikujesz.'}
+            </p>
+            <p className="mt-2">
+              Jeśli chcesz, żeby inni użytkownicy Cię znaleźli, przejdź w dowolnym momencie do{' '}
+              <span className="font-medium">Mój profil</span> i kliknij{' '}
+              <span className="font-medium">&quot;Opublikuj profil&quot;</span>.
+            </p>
+          </div>
         )}
 
         {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
