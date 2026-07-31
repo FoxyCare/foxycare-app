@@ -25,7 +25,7 @@ Next.js frontend + API for **FoxyCare** — an OLX-style classifieds marketplace
 - Supabase (`@supabase/ssr`, `@supabase/supabase-js`) for auth, database access, realtime, and Storage (nanny/parent profile photos, `avatars` bucket)
 - Jest + Testing Library for unit tests
 
-There is no payments-for-childcare, booking, or review feature by design — see `copilot_opis.md` at the workspace root for the full MVP spec. A nanny's profile *is* her one listing (no separate "ad" entity); it stays unpublished/unsearchable until she toggles it live in `/profile` — free self-service for now, intended to be gated by a real payment later (see `/terms` §6).
+There is no payments-for-childcare, booking, or review feature by design — see `copilot_opis.md` at the workspace root for the full MVP spec. A nanny's profile *is* her one listing (no separate "ad" entity); it stays unpublished/unsearchable until she toggles it live in `/profile` — free self-service for now, intended to be gated by a real payment later (the "Płatności za publikację Ogłoszenia" section of `/terms` describing that future model is currently commented out of the rendered page — see the dev comment above it in `src/app/terms/page.tsx`). Since [`foxycare-db`](../foxycare-db) migration 0032, a parent's profile works the same way (minus `experience_years`/`price`) — nannies can search and browse published parent profiles too, via the same `/profile` publish toggle and the same `/search` page (which becomes role-aware: a nanny viewer searches parents, everyone else searches nannies as before).
 
 ---
 
@@ -42,10 +42,15 @@ foxycare-app/
 │   │   │                           #   the code for a session, then routes to /onboarding
 │   │   │                           #   (first sign-in) or /dashboard (returning user)
 │   │   ├── (protected)/            # /dashboard, /profile, /chat — require a session
-│   │   ├── search/                 # /search — public, browsable without an account
+│   │   ├── search/                 # /search — role-aware: a nanny viewer searches published
+│   │   │                           #   parent profiles, everyone else (parents, anon) searches
+│   │   │                           #   published nanny profiles as before; anon browsing only
+│   │   │                           #   ever works for the nanny direction
 │   │   ├── nanny/[id]/             # /nanny/[id] — a single nanny's public listing; requires a
 │   │   │                           #   session to view (proxy.ts), separately gated by
 │   │   │                           #   nanny_profiles.is_published (RLS) for who it's visible to
+│   │   ├── parent/[id]/            # /parent/[id] — the parent-side mirror of /nanny/[id]; gated
+│   │   │                           #   by parent_profiles.is_published (RLS), never anon-visible
 │   │   ├── admin/                  # /admin, /admin/nannies, /admin/parents, /admin/reports —
 │   │   │                           #   role: admin only
 │   │   ├── terms/, privacy/        # /terms, /privacy — public legal pages
@@ -68,7 +73,9 @@ foxycare-app/
 │   │   ├── NannyPhoto.tsx          # shared photo tile (fallback to initials) — NannyCard's
 │   │   │                           #   cover photo and the bigger hero photo on /nanny/[id] and
 │   │   │                           #   /profile both use this, not the small circular Avatar
-│   │   ├── MessageNannyButton.tsx  # shared "message this nanny" CTA (search, nanny profile)
+│   │   ├── MessageUserButton.tsx   # shared "message this user" CTA — search results, /nanny/[id],
+│   │   │                           #   /parent/[id] (renamed from MessageNannyButton once parents
+│   │   │                           #   became a messaging target too)
 │   │   ├── PhoneReveal.tsx         # "Pokaż numer telefonu" — /nanny/[id] and the /chat header;
 │   │   │                           #   hidden until clicked, requires login, backed by
 │   │   │                           #   reveal_phone()/is_phone_shareable() (foxycare-db 0023)
@@ -108,11 +115,12 @@ foxycare-app/
 | `/auth/callback` | public (route handler) | OAuth redirect target — see [OAuth Sign-In Setup](#oauth-sign-in-setup) |
 | `/onboarding` | authenticated | First-login profile setup (role-specific); for a first-time OAuth sign-in this also collects role + terms acceptance, since providers don't let us attach that at signup the way email/password does |
 | `/dashboard` | authenticated | Publish status card + quick link to edit (nanny), or a shortcut to search (parent) |
-| `/search` | **public** | Browse and filter **published** nanny listings — no account needed. Reads from the `nanny_public_profiles` view, not `nanny_profiles` directly (see [`foxycare-db`](../foxycare-db) for why). Messaging a nanny from here prompts login. |
-| `/profile` | authenticated | Edit profile — nannies also set title/price/photo here and publish/unpublish their listing; phone number + "Udostępnij numer telefonu" toggle and reveal-count stat (both roles); also where a user deletes their own account (RODO Art. 17) |
+| `/search` | **public** for a nanny listing search; authenticated for a parent listing search | Role-aware: a nanny viewer browses and filters **published parent** profiles (location/job type/children's age range — no experience filter, parents don't have that field); everyone else (parents, anon) browses **published nanny** profiles as before (additionally filterable by experience). Reads from `nanny_public_profiles`/`parent_public_profiles` (see [`foxycare-db`](../foxycare-db) for why) — only the nanny-facing view is anon-readable. Messaging someone from here prompts login. |
+| `/profile` | authenticated | Edit profile — both roles now set title/description/job type/children's age range/photo here and publish/unpublish their listing (nannies additionally set experience/price); phone number + "Udostępnij numer telefonu" toggle and reveal-count stat (both roles); also where a user deletes their own account (RODO Art. 17) |
 | `/chat` | authenticated | Conversations and messages; header shows the other participant's name, a `PhoneReveal` control and a `ReportUserButton` |
 | `/nanny/[id]` | authenticated to view; separately gated by publish state | A single nanny's public listing (photo, title, price, description, contact, `PhoneReveal`, `ReportUserButton`). Requires a session (`proxy.ts`), and — independent of that — RLS only returns the row if it's published, or the caller is the owner or an admin; anyone else gets a 404, not an error |
-| `/admin`, `/admin/nannies`, `/admin/parents` | admin only | Stats overview; filterable nanny/parent lists with ban/unban and (nannies) publish/unpublish |
+| `/parent/[id]` | authenticated; separately gated by publish state | The parent-side mirror of `/nanny/[id]` — same photo/title/description/contact/`PhoneReveal`/`ReportUserButton` shape, minus price/experience. `parent_profiles` is never anon-readable (unlike `nanny_profiles`), so there's no anon-fallback branch for the name lookup the way `/nanny/[id]` needs one |
+| `/admin`, `/admin/nannies`, `/admin/parents` | admin only | Stats overview; filterable nanny/parent lists with ban/unban and publish/unpublish (both roles now) |
 | `/admin/reports` | admin only | Moderation queue — filter by status, view description + attachments (signed URLs), ban the reported user, mark resolved/dismissed |
 | `/terms`, `/privacy` | public | Regulamin / Polityka Prywatności — required acceptance at registration, see [`src/lib/legal/`](src/lib/legal) |
 
@@ -120,7 +128,7 @@ foxycare-app/
 
 | Route | Methods | Purpose |
 | ------- | --------- | --------- |
-| `/api/profile` | `GET`, `PUT` | Current user's role-specific profile (`parent_profiles`/`nanny_profiles`) — nannies also PUT `title`/`price`/`is_published`/`published_at` here; no separate publish endpoint exists for self-service |
+| `/api/profile` | `GET`, `PUT` | Current user's role-specific profile (`parent_profiles`/`nanny_profiles`) — both roles PUT `title`/`job_type`/`children_age_range`/`description`/`is_published`/`published_at` here now; nannies additionally PUT `price`/`experience_years`. No separate publish endpoint exists for self-service |
 | `/api/profile/phone` | `GET`, `PUT` | Current user's own `contact_phones` row (phone + `phone_visible` consent toggle) plus `reveal_count` — the number itself never appears in any other endpoint's response |
 | `/api/phone-reveal/[id]` | `GET`, `POST` | `GET` checks whether `[id]`'s number can be revealed at all (`is_phone_shareable`, no auth required — used to decide whether to render the button); `POST` actually reveals it (`reveal_phone`, requires auth, records the reveal for `[id]`'s stat) |
 | `/api/reports` | `POST` | Self-service report submission — creates a `reports` row (RLS: `reporter_id` must be the caller), returns its `id` so the client can attach evidence files to it. Rate-limited by `trg_reports_rate_limit` (foxycare-db migration 0028: max 1 report per reporter/reported pair per 24h, max 5 reports per reporter per hour) — this route turns the trigger's exception into a 429 with a Polish message |
@@ -128,15 +136,14 @@ foxycare-app/
 | `/api/account` | `DELETE` | Deletes the caller's own account — RODO Art. 17 self-service. Removes the avatar and any report-evidence attachments from Storage, then calls `delete_user_account` (see [`foxycare-db`](../foxycare-db)'s migrations 0022, 0028–0031); everything else cascades at the DB level |
 | `/api/conversations` | `GET`, `POST` | List the caller's conversations; find-or-create one with another user |
 | `/api/messages` | `GET`, `POST` | Messages within a conversation |
-| `/api/admin/stats` | `GET` | Total/online/banned/published-profile counts (admin only) |
-| `/api/admin/users` | `GET` | Filterable nanny/parent list (admin only) |
+| `/api/admin/users` | `GET` | Filterable nanny/parent list (admin only); job type/children's age range filters apply to both roles, min-experience stays nanny-only |
 | `/api/admin/users/[id]/ban`, `/unban` | `POST` | Sets/clears `users.is_banned` (admin only) — enforced entirely in app code, see [Environment Variables](#environment-variables) |
-| `/api/admin/users/[id]/publish`, `/unpublish` | `POST` | Sets/clears `nanny_profiles.is_published` (admin only) — moderation override alongside the nanny's own self-service toggle in `/profile` |
+| `/api/admin/users/[id]/publish`, `/unpublish` | `POST` | Sets/clears `is_published` on `nanny_profiles` or `parent_profiles` — looks up the target's role first to pick the table (admin only) — moderation override alongside that user's own self-service toggle in `/profile` |
 | `/api/admin/users/[id]/delete` | `POST` | Admin-triggered account deletion — for erasure requests from accounts that can't act for themselves (e.g. banned users, per `/terms` §12); same avatar/attachment Storage cleanup as `/api/account` |
 | `/api/admin/reports` | `GET` | Lists reports (optionally filtered by `?status=`) with reporter/reported names joined in and a short-lived signed URL per attachment (admin only) |
 | `/api/admin/reports/[id]/resolve`, `/dismiss` | `POST` | Sets `reports.status` + `resolved_by`/`resolved_at` (admin only); banning the reported user is a separate call to the existing `/api/admin/users/[id]/ban`, not automatic |
 
-All data access goes through Supabase with Row Level Security as the actual security boundary — the API routes are a convenience layer, not the source of truth for authorization. Two exceptions: `users.is_banned` (RLS only guards *who* can flip it; the sign-in block itself is app code — `LoginForm` + `proxy.ts`) and, more mildly, `nanny_profiles.is_published` (RLS fully enforces *read* visibility, but the self-service *write* path has no payment gate yet — see [`foxycare-db`](../foxycare-db)'s migration 0020 comments and `/terms` §6).
+All data access goes through Supabase with Row Level Security as the actual security boundary — the API routes are a convenience layer, not the source of truth for authorization. Two exceptions: `users.is_banned` (RLS only guards *who* can flip it; the sign-in block itself is app code — `LoginForm` + `proxy.ts`) and, more mildly, `is_published` on `nanny_profiles`/`parent_profiles` (RLS fully enforces *read* visibility, but the self-service *write* path has no payment gate yet on either side — see [`foxycare-db`](../foxycare-db)'s migration 0020/0032 comments and the commented-out payment section in `src/app/terms/page.tsx`).
 
 ---
 

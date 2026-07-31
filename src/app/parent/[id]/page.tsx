@@ -9,11 +9,15 @@ import { NannyPhoto } from '@/components/NannyPhoto'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent } from '@/components/ui/Card'
 import { createClient } from '@/lib/supabase/server'
-import { formatCurrency } from '@/lib/utils'
 import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
-import type { NannyProfile, NannyPublicProfile, User } from '@/types'
+import type { ParentProfile, User } from '@/types'
 
-export default async function NannyProfilePage({
+// Mirrors /nanny/[id], simplified: parent_profiles (foxycare-db migration
+// 0032) is never anon-readable, and /parent/[id] isn't in proxy.ts's
+// PUBLIC_ROUTES, so an unauthenticated visitor is redirected to /login
+// before this page ever runs — unlike the nanny page, there's no anon
+// fallback branch needed to read full_name.
+export default async function ParentProfilePage({
   params,
 }: {
   params: Promise<{ id: string }>
@@ -21,46 +25,28 @@ export default async function NannyProfilePage({
   const { id } = await params
   const supabase = await createClient()
 
-  // RLS (migration 0020) only returns this row when it's published, or the
+  // RLS (migration 0032) only returns this row when it's published, or the
   // caller is the owner or an admin — a legitimately-hidden profile comes
   // back as zero rows, not an error, so this must be maybeSingle(), not
   // single() (which would throw on 0 rows).
-  const { data: nannyProfile } = await supabase
-    .from('nanny_profiles')
+  const { data: parentProfile } = await supabase
+    .from('parent_profiles')
     .select('*')
     .eq('user_id', id)
-    .maybeSingle<NannyProfile>()
+    .maybeSingle<ParentProfile>()
 
-  if (!nannyProfile) notFound()
+  if (!parentProfile) notFound()
 
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser()
 
-  // full_name lives on users, not nanny_profiles. users is authenticated-
-  // only for SELECT (any logged-in viewer may read any row, per RLS), so
-  // this works for every case except a fully anonymous visitor — who falls
-  // back to nanny_public_profiles, guaranteed to have a row here since
-  // nannyProfile above only resolved for anon via its is_published=true
-  // branch of the RLS check.
-  let fullName: string | null = null
-  if (authUser) {
-    const { data: nannyUser } = await supabase
-      .from('users')
-      .select('full_name')
-      .eq('id', id)
-      .maybeSingle<Pick<User, 'full_name'>>()
-    fullName = nannyUser?.full_name ?? null
-  }
-  if (!fullName) {
-    const { data: publicProfile } = await supabase
-      .from('nanny_public_profiles')
-      .select('full_name')
-      .eq('id', id)
-      .maybeSingle<Pick<NannyPublicProfile, 'full_name'>>()
-    fullName = publicProfile?.full_name ?? null
-  }
-  const displayName = fullName ?? 'Niania'
+  const { data: parentUser } = await supabase
+    .from('users')
+    .select('full_name')
+    .eq('id', id)
+    .maybeSingle<Pick<User, 'full_name'>>()
+  const displayName = parentUser?.full_name ?? 'Rodzic'
 
   const viewerProfile = authUser
     ? (await supabase.from('users').select('*').eq('id', authUser.id).single()).data
@@ -73,9 +59,9 @@ export default async function NannyProfilePage({
       <Navbar profile={viewerProfile as User | null} />
       <main className="flex-1 bg-gray-50">
         <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-          {isOwnProfile && !nannyProfile.is_published && (
+          {isOwnProfile && !parentProfile.is_published && (
             <div className="rounded-lg bg-brand-50 p-4 text-sm text-brand-800">
-              Twój profil jest niewidoczny dla rodziców.{' '}
+              Twój profil jest niewidoczny dla niań.{' '}
               <Link href="/profile" className="font-medium underline">
                 Opublikuj go w Mój profil
               </Link>
@@ -86,24 +72,20 @@ export default async function NannyProfilePage({
             <CardContent className="pt-6">
               <div className="flex flex-col items-start gap-4 sm:flex-row">
                 <NannyPhoto
-                  src={nannyProfile.avatar_url}
+                  src={parentProfile.avatar_url}
                   name={displayName}
                   className="h-40 w-40 shrink-0 rounded-2xl sm:h-48 sm:w-48"
                   initialsClassName="text-5xl"
                 />
                 <div className="flex-1">
                   <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
-                  {nannyProfile.title && <p className="text-gray-700">{nannyProfile.title}</p>}
-                  {nannyProfile.location && (
-                    <p className="text-gray-500">📍 {nannyProfile.location}</p>
+                  {parentProfile.title && <p className="text-gray-700">{parentProfile.title}</p>}
+                  {parentProfile.location && (
+                    <p className="text-gray-500">📍 {parentProfile.location}</p>
                   )}
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {nannyProfile.price != null && (
-                      <Badge variant="info">{formatCurrency(nannyProfile.price)}/godz.</Badge>
-                    )}
-                    <Badge>{nannyProfile.experience_years} lat doświadczenia</Badge>
-                    {nannyProfile.job_type?.map((jt) => <Badge key={jt}>{JOB_TYPE_LABEL[jt]}</Badge>)}
-                    {nannyProfile.children_age_range?.map((range) => (
+                    {parentProfile.job_type?.map((jt) => <Badge key={jt}>{JOB_TYPE_LABEL[jt]}</Badge>)}
+                    {parentProfile.children_age_range?.map((range) => (
                       <Badge key={range}>{AGE_RANGE_LABEL[range]}</Badge>
                     ))}
                   </div>
@@ -116,8 +98,8 @@ export default async function NannyProfilePage({
                   </div>
                 )}
               </div>
-              {nannyProfile.description && (
-                <p className="mt-6 whitespace-pre-line text-gray-700">{nannyProfile.description}</p>
+              {parentProfile.description && (
+                <p className="mt-6 whitespace-pre-line text-gray-700">{parentProfile.description}</p>
               )}
             </CardContent>
           </Card>

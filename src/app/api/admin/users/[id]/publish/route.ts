@@ -12,11 +12,22 @@ export async function POST(
   const adminCheck = await requireAdmin(supabase)
   if (adminCheck instanceof NextResponse) return adminCheck
 
-  // id here is users.id (nanny_profiles.user_id), not nanny_profiles.id —
-  // same convention as ban/unban. Requires nanny_profiles_update_admin RLS
-  // (foxycare-db migration 0020).
+  const { data: targetUser, error: userError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', id)
+    .single()
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 })
+  }
+
+  // id here is users.id (nanny_profiles.user_id / parent_profiles.user_id),
+  // not the profile row's own id — same convention as ban/unban. Requires
+  // nanny_profiles_update_admin / parent_profiles_update_admin RLS
+  // (foxycare-db migrations 0020, 0032).
+  const profileTable = targetUser.role === 'nanny' ? 'nanny_profiles' : 'parent_profiles'
   const { error } = await supabase
-    .from('nanny_profiles')
+    .from(profileTable)
     .update({ is_published: true, published_at: new Date().toISOString() })
     .eq('user_id', id)
   if (error) {

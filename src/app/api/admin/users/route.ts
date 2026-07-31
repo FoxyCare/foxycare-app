@@ -26,13 +26,16 @@ export async function GET(request: Request) {
   const location = searchParams.get('location')?.trim()
   if (location) query = query.ilike('profile.location', `%${location}%`)
 
+  // job_type/children_age_range apply to both roles now — parent_profiles
+  // got the same columns in foxycare-db migration 0032. min_experience
+  // stays nanny-only; parent_profiles has no experience_years.
+  const jobType = searchParams.getAll('job_type')
+  if (jobType.length) query = query.overlaps('profile.job_type', jobType)
+
+  const ageRange = searchParams.getAll('children_age_range')
+  if (ageRange.length) query = query.overlaps('profile.children_age_range', ageRange)
+
   if (role === 'nanny') {
-    const jobType = searchParams.getAll('job_type')
-    if (jobType.length) query = query.overlaps('profile.job_type', jobType)
-
-    const ageRange = searchParams.getAll('children_age_range')
-    if (ageRange.length) query = query.overlaps('profile.children_age_range', ageRange)
-
     const minExperience = searchParams.get('min_experience')
     if (minExperience) query = query.gte('profile.experience_years', Number(minExperience))
   }

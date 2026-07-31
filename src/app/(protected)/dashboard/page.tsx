@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { PublishToggleButton } from '@/components/PublishToggleButton'
 import type { NannyProfile, ParentProfile, User } from '@/types'
 
 export default async function DashboardPage() {
@@ -31,8 +32,6 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .maybeSingle<NannyProfile | ParentProfile>()
 
-  const nannyProfile = isNanny ? (roleProfile as NannyProfile | undefined) : undefined
-
   const { count: conversationCount } = await supabase
     .from('conversations')
     .select('id', { count: 'exact', head: true })
@@ -58,18 +57,19 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {isNanny && (
-          <Card>
-            <CardContent className="pt-6">
+        <Card>
+          <CardContent className="flex items-center justify-between gap-4 pt-6">
+            <div>
               <p className="text-sm text-gray-500">Status profilu</p>
               <p className="mt-1">
-                <Badge variant={nannyProfile?.is_published ? 'success' : 'default'}>
-                  {nannyProfile?.is_published ? 'Opublikowany' : 'Nieopublikowany'}
+                <Badge variant={roleProfile?.is_published ? 'success' : 'default'}>
+                  {roleProfile?.is_published ? 'Opublikowany' : 'Nieopublikowany'}
                 </Badge>
               </p>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+            <PublishToggleButton profile={roleProfile ?? {}} />
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-gray-500">Rozmowy</p>
@@ -78,35 +78,39 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {isNanny ? (
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Twój profil</CardTitle>
           </CardHeader>
           <CardContent>
-            {nannyProfile?.title ? (
-              <p className="text-sm font-medium text-gray-900">{nannyProfile.title}</p>
+            {roleProfile?.title ? (
+              <p className="text-sm font-medium text-gray-900">{roleProfile.title}</p>
             ) : (
-              <p className="text-sm text-gray-500">Nie uzupełniłaś jeszcze tytułu ogłoszenia.</p>
+              <p className="text-sm text-gray-500">Nie uzupełniono jeszcze tytułu ogłoszenia.</p>
             )}
             <p className="mt-1 text-sm text-gray-500">
-              {nannyProfile?.is_published
-                ? 'Twój profil jest widoczny dla rodziców w wyszukiwarce.'
-                : 'Twój profil nie jest jeszcze widoczny dla rodziców.'}
+              {isNanny
+                ? roleProfile?.is_published
+                  ? 'Twój profil jest widoczny dla rodziców w wyszukiwarce.'
+                  : 'Twój profil nie jest jeszcze widoczny dla rodziców.'
+                : roleProfile?.is_published
+                  ? 'Twój profil jest widoczny dla niań w wyszukiwarce.'
+                  : 'Twój profil nie jest jeszcze widoczny dla niań.'}
             </p>
             <Link href="/profile" className="mt-4 inline-block">
               <Button size="sm">Zarządzaj profilem</Button>
             </Link>
           </CardContent>
         </Card>
-      ) : (
+
         <Card>
           <CardHeader>
-            <CardTitle>Znajdź nianię</CardTitle>
+            <CardTitle>{isNanny ? 'Znajdź rodzinę' : 'Znajdź nianię'}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-500">
-              Przeglądaj i filtruj ogłoszenia niań w{' '}
+              Przeglądaj i filtruj ogłoszenia {isNanny ? 'rodzin' : 'niań'} w{' '}
               <Link href="/search" className="text-brand-600 hover:underline">
                 wyszukiwarce
               </Link>
@@ -114,7 +118,7 @@ export default async function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   )
 }

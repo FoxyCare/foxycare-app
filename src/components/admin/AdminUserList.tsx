@@ -125,37 +125,35 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
               onChange={(e) => setFilters((f) => ({ ...f, location: e.target.value }))}
             />
             {role === 'nanny' && (
-              <>
-                <Input
-                  label="Min. doświadczenie (lata)"
-                  type="number"
-                  min="0"
-                  value={filters.min_experience ?? 0}
-                  onChange={(e) =>
-                    setFilters((f) => ({
-                      ...f,
-                      min_experience: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                    }))
-                  }
-                />
-                <CheckboxGroup
-                  label="Typ pracy"
-                  options={JOB_TYPE_OPTIONS}
-                  value={filters.job_type ?? []}
-                  onChange={(value) =>
-                    setFilters((f) => ({ ...f, job_type: value as JobType[] }))
-                  }
-                />
-                <CheckboxGroup
-                  label="Wiek dzieci"
-                  options={AGE_RANGE_OPTIONS}
-                  value={filters.children_age_range ?? []}
-                  onChange={(value) =>
-                    setFilters((f) => ({ ...f, children_age_range: value as ChildrenAgeRange[] }))
-                  }
-                />
-              </>
+              <Input
+                label="Min. doświadczenie (lata)"
+                type="number"
+                min="0"
+                value={filters.min_experience ?? 0}
+                onChange={(e) =>
+                  setFilters((f) => ({
+                    ...f,
+                    min_experience: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                  }))
+                }
+              />
             )}
+            <CheckboxGroup
+              label="Typ pracy"
+              options={JOB_TYPE_OPTIONS}
+              value={filters.job_type ?? []}
+              onChange={(value) =>
+                setFilters((f) => ({ ...f, job_type: value as JobType[] }))
+              }
+            />
+            <CheckboxGroup
+              label="Wiek dzieci"
+              options={AGE_RANGE_OPTIONS}
+              value={filters.children_age_range ?? []}
+              onChange={(value) =>
+                setFilters((f) => ({ ...f, children_age_range: value as ChildrenAgeRange[] }))
+              }
+            />
           </div>
           <Button onClick={fetchUsers} className="mt-4" isLoading={isLoading}>
             Szukaj
@@ -183,14 +181,12 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                             Zbanowany
                           </Badge>
                         )}
-                        {role === 'nanny' && (
-                          <Badge
-                            variant={user.profile?.is_published ? 'success' : 'default'}
-                            className="ml-2"
-                          >
-                            {user.profile?.is_published ? 'Opublikowany' : 'Nieopublikowany'}
-                          </Badge>
-                        )}
+                        <Badge
+                          variant={user.profile?.is_published ? 'success' : 'default'}
+                          className="ml-2"
+                        >
+                          {user.profile?.is_published ? 'Opublikowany' : 'Nieopublikowany'}
+                        </Badge>
                       </p>
                       <p className="truncate text-sm text-gray-500">{user.email}</p>
                       <div className="mt-1 flex flex-wrap gap-1">
@@ -198,26 +194,22 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                         {role === 'nanny' && user.profile?.experience_years !== undefined && (
                           <Badge>{user.profile.experience_years} lat doświadczenia</Badge>
                         )}
-                        {role === 'nanny' &&
-                          user.profile?.job_type?.map((jt) => <Badge key={jt}>{JOB_TYPE_LABEL[jt]}</Badge>)}
-                        {role === 'nanny' &&
-                          user.profile?.children_age_range?.map((range) => (
-                            <Badge key={range}>{AGE_RANGE_LABEL[range]}</Badge>
-                          ))}
+                        {user.profile?.job_type?.map((jt) => <Badge key={jt}>{JOB_TYPE_LABEL[jt]}</Badge>)}
+                        {user.profile?.children_age_range?.map((range) => (
+                          <Badge key={range}>{AGE_RANGE_LABEL[range]}</Badge>
+                        ))}
                       </div>
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    {role === 'nanny' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        isLoading={pendingPublishId === user.id}
-                        onClick={() => togglePublish(user)}
-                      >
-                        {user.profile?.is_published ? 'Cofnij publikację' : 'Opublikuj'}
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      isLoading={pendingPublishId === user.id}
+                      onClick={() => togglePublish(user)}
+                    >
+                      {user.profile?.is_published ? 'Cofnij publikację' : 'Opublikuj'}
+                    </Button>
                     <Button
                       variant={user.is_banned ? 'outline' : 'danger'}
                       size="sm"
