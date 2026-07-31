@@ -10,8 +10,9 @@ export const metadata: Metadata = {
 }
 
 // SZKIC WYMAGAJĄCY WERYFIKACJI PRAWNEJ PRZED PUBLIKACJĄ.
-// Uzupełnić dane Administratora w §1 (te same [DO UZUPEŁNIENIA] co w
-// /terms §1.2). §3.3 celowo nie podaje konkretnego regionu hostingu
+// Dane Administratora uzupełnione w §1.1 (2026-07-30), tak samo jak w
+// /terms §1.2 — adres siedziby celowo pominięty (nie jako placeholder;
+// patrz komentarz w /terms dla pełnego uzasadnienia). §3.3 celowo nie podaje konkretnego regionu hostingu
 // Supabase/Vercel (region jest szczegółem operacyjnym, który się zmienia
 // niezależnie od tego dokumentu) — zamiast tego opisuje zabezpieczenia
 // stosowane niezależnie od aktualnego regionu, patrz rozmowa z 2026-07-20.
@@ -28,12 +29,10 @@ export default function PrivacyPage() {
           <Section title="§1. Administrator danych">
             <P>
               1.1. Administratorem danych osobowych przetwarzanych w związku z korzystaniem z
-              serwisu FoxyCare (dalej: „Serwis”) jest{' '}
-              <span className="font-medium">
-                [DO UZUPEŁNIENIA: pełna nazwa podmiotu / imię i nazwisko przedsiębiorcy, adres
-                siedziby, NIP, REGON (jeśli dotyczy)]
-              </span>{' '}
-              (dalej: „Administrator”), ten sam podmiot co Operator wskazany w{' '}
+              serwisu FoxyCare (dalej: „Serwis”) jest Krzysztof Mickiewicz, prowadzący
+              działalność gospodarczą pod nazwą M‑IT Solutions Krzysztof Mickiewicz, NIP
+              7272855015, REGON 520745068 (dalej: „Administrator”), ten sam podmiot co Operator
+              wskazany w{' '}
               <Link href="/terms" className="text-brand-600 underline">
                 Regulaminie
               </Link>
@@ -41,7 +40,7 @@ export default function PrivacyPage() {
             </P>
             <P>
               1.2. W sprawach dotyczących ochrony danych osobowych można kontaktować się pod
-              adresem e-mail: <span className="font-medium">[DO UZUPEŁNIENIA]</span>.
+              adresem e-mail: <span className="font-medium">support@foxycare.pl</span>.
             </P>
             <P>
               1.3. Administrator nie powołał Inspektora Ochrony Danych, gdyż nie zachodzą

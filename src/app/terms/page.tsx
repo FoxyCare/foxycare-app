@@ -10,11 +10,21 @@ export const metadata: Metadata = {
 }
 
 // SZKIC WYMAGAJĄCY WERYFIKACJI PRAWNEJ PRZED PUBLIKACJĄ.
-// Uzupełnić dane Operatora (nazwa, adres, NIP/REGON, e-mail do reklamacji)
-// w sekcji §1.2 poniżej, oraz cennik/dostawcę płatności w §6 — oznaczone
-// jako [DO UZUPEŁNIENIA]. Płatności za publikację Ogłoszenia nie są jeszcze
-// zaimplementowane w aplikacji (brak integracji z operatorem płatności) —
-// ten paragraf opisuje docelowy model, patrz rozmowa z 2026-07-20.
+// Dane Operatora (imię i nazwisko, nazwa działalności, NIP, REGON, e-mail)
+// uzupełnione w §1.2 (2026-07-30). Adres siedziby celowo pominięty w zdaniu
+// (nie jako [DO UZUPEŁNIENIA] — użytkownik wyraźnie poprosił 2026-07-30, żeby
+// w publikowanym dokumencie nie zostawiać widocznych luk/placeholderów): JDG
+// jest zarejestrowana pod adresem prywatnym, a ustawa o prawach konsumenta
+// wymaga podania adresu dopiero przy zawieraniu umów na odległość z
+// konsumentem — moduł płatności jeszcze nie istnieje, więc ten obowiązek
+// jeszcze nie wiąże. Operator doda adres do zdania dopiero przed wdrożeniem
+// płatności — wtedy zdecyduje między adresem z CEIDG a wirtualnym biurem.
+//
+// Cała sekcja o płatnościach za publikację Ogłoszenia jest wyłączona z
+// publikacji od 2026-07-30 (na wyraźną prośbę Operatora — moduł płatności
+// jeszcze nie istnieje w aplikacji, regulamin nie powinien o nim wspominać,
+// dopóki funkcja faktycznie nie działa) — patrz szczegółowy komentarz przy
+// tej sekcji poniżej, w miejscu gdzie normalnie byłaby §6.
 export default function TermsPage() {
   return (
     <>
@@ -32,13 +42,10 @@ export default function TermsPage() {
               (dalej: „Serwis”).
             </P>
             <P>
-              1.2. Operatorem Serwisu jest{' '}
-              <span className="font-medium">
-                [DO UZUPEŁNIENIA: pełna nazwa podmiotu / imię i nazwisko przedsiębiorcy, adres
-                siedziby, NIP, REGON (jeśli dotyczy)]
-              </span>{' '}
-              (dalej: „Operator”). Adres e-mail do kontaktu i reklamacji:{' '}
-              <span className="font-medium">[DO UZUPEŁNIENIA]</span>.
+              1.2. Operatorem Serwisu jest Krzysztof Mickiewicz, prowadzący działalność
+              gospodarczą pod nazwą M‑IT Solutions Krzysztof Mickiewicz, NIP 7272855015, REGON
+              520745068 (dalej: „Operator”). Adres e-mail do kontaktu i reklamacji:{' '}
+              <span className="font-medium">support@foxycare.pl</span>.
             </P>
             <P>
               1.3. Regulamin jest udostępniany nieodpłatnie pod adresem{' '}
@@ -101,9 +108,8 @@ export default function TermsPage() {
               <b>nie jest stroną</b> jakiejkolwiek umowy zawieranej pomiędzy Rodzicem a Nianią,{' '}
               <b>nie pośredniczy</b> w płatnościach za Usługi opiekuńcze, nie zatrudnia Niań, nie
               prowadzi działalności agencji opieki nad dziećmi ani nie gwarantuje zawarcia,
-              wykonania czy jakości jakiejkolwiek Usługi opiekuńczej. Jedyną odpłatną usługą, jaką
-              Operator świadczy we własnym imieniu, jest publikacja Ogłoszenia — zasady tej
-              odpłatności określa §6.
+              wykonania czy jakości jakiejkolwiek Usługi opiekuńczej. Korzystanie z Serwisu, w tym
+              publikacja Ogłoszenia, jest obecnie bezpłatne dla wszystkich Użytkowników.
             </P>
             <P>
               3.3. Wszelkie ustalenia dotyczące zakresu, terminu, wynagrodzenia i warunków
@@ -147,6 +153,39 @@ export default function TermsPage() {
             </P>
           </Section>
 
+          {/*
+            Sekcja "Płatności za publikację Ogłoszenia" (poniżej, treść zachowana) jest wyłączona
+            z publikacji od 2026-07-30 na wyraźną prośbę Operatora: moduł płatności nie istnieje
+            jeszcze w aplikacji (brak integracji z jakimkolwiek dostawcą płatności), więc regulamin
+            nie powinien o nim wspominać, dopóki funkcja faktycznie nie działa — patrz
+            [[project_payment_module_legal_followups]]. Tekst poniżej to gotowy szkic na moment
+            wdrożenia płatności (wymaga wtedy uzupełnienia cennika w punkcie .1 i dostawcy
+            płatności w punkcie .2, patrz oryginalne [DO UZUPEŁNIENIA] w treści).
+
+            Wszystkie kolejne sekcje (obecnie §6–§12) zostały przy tej okazji przenumerowane w dół
+            o jeden, tak żeby w publikowanym dokumencie nie było widocznej luki w numeracji między
+            §5 a następną sekcją. Numery paragrafów poniżej celowo NIE są aktualizowane co do
+            wartości (zostają "6.1" itd.) — to tylko szkic do wklejenia z powrotem, nie do
+            renderowania w obecnej postaci.
+
+            WAŻNE przy przywracaniu tej sekcji — to NIE jest samo odkomentowanie:
+            1. Wszystkie sekcje od "Brak weryfikacji Użytkowników" w dół trzeba przenumerować z
+               powrotem w górę o jeden (obecne §6→§7, §7→§8, §8→§9, §9→§10, §10→§11, §11→§12), wraz
+               z wewnętrznymi odwołaniami (np. "podstawie §8" w sekcji o usunięciu Konta wróci do
+               "podstawie §9").
+            2. Trzeba ręcznie przywrócić wzmianki o odpłatności usunięte z innych paragrafów przy
+               wyłączaniu tej sekcji (dokładne poprzednie brzmienie jest w historii git — szukaj
+               commitu z 2026-07-30 usuwającego te sekcje):
+               - "Charakter Serwisu" — zdanie o jedynej odpłatnej usłudze Operatora (obecnie:
+                 "korzystanie z Serwisu jest obecnie bezpłatne")
+               - "Brak weryfikacji Użytkowników", punkt .1 — wzmianka "w tym jej odpłatny charakter"
+               - "Odpowiedzialność", ostatni punkt — "publikacji opłaconego Ogłoszenia zgodnie z §…"
+               - "Reklamacje", punkt .1 — "w tym płatności za publikację Ogłoszenia"
+               - "Reklamacje" — cały punkt o zwrocie opłaty za publikację (usunięty, nie tylko
+                 zmieniony; odwoływał się do punktów .3–.4 tej sekcji płatności)
+               - "Postanowienia końcowe" — przykład "zmiana cennika" w liście przyczyn zmiany
+                 Regulaminu
+
           <Section title="§6. Płatności za publikację Ogłoszenia">
             <P>
               6.1. Publikacja Ogłoszenia przez Nianię jest odpłatna. Aktualny cennik jest dostępny
@@ -189,20 +228,20 @@ export default function TermsPage() {
               (Reklamacje).
             </P>
           </Section>
+          */}
 
-          <Section title="§7. Brak weryfikacji Użytkowników — informacja kluczowa">
+          <Section title="§6. Brak weryfikacji Użytkowników — informacja kluczowa">
             <P>
-              7.1. Serwis pełni wyłącznie funkcję tablicy ogłoszeń.{' '}
+              6.1. Serwis pełni wyłącznie funkcję tablicy ogłoszeń.{' '}
               <b>
                 Operator nie weryfikuje tożsamości, kwalifikacji, doświadczenia, wykształcenia,
                 niekaralności, stanu zdrowia, uprawnień ani wiarygodności Użytkowników
               </b>{' '}
-              — ani Rodziców, ani Niań. Rejestracja Konta i publikacja Ogłoszenia, w tym jej
-              odpłatny charakter, nie stanowią jakiegokolwiek potwierdzenia czy rekomendacji ze
-              strony Operatora.
+              — ani Rodziców, ani Niań. Rejestracja Konta i publikacja Ogłoszenia nie stanowią
+              jakiegokolwiek potwierdzenia czy rekomendacji ze strony Operatora.
             </P>
             <P>
-              7.2. Operator zdecydowanie rekomenduje, aby przed nawiązaniem współpracy każdy
+              6.2. Operator zdecydowanie rekomenduje, aby przed nawiązaniem współpracy każdy
               Użytkownik samodzielnie zweryfikował drugą stronę, w szczególności poprzez: okazanie
               dokumentu tożsamości, przedstawienie aktualnego zaświadczenia z Krajowego Rejestru
               Karnego, sprawdzenie{' '}
@@ -218,12 +257,12 @@ export default function TermsPage() {
               oraz ustalenie pisemnych warunków współpracy.
             </P>
             <P>
-              7.3. Decyzja o nawiązaniu kontaktu i rozpoczęciu współpracy z inną osobą poznaną za
+              6.3. Decyzja o nawiązaniu kontaktu i rozpoczęciu współpracy z inną osobą poznaną za
               pośrednictwem Serwisu należy wyłącznie do Użytkownika i jest podejmowana na jego
               własne ryzyko i odpowiedzialność.
             </P>
             <P>
-              7.4. Obowiązek sprawdzenia Rejestru Sprawców Przestępstw na Tle Seksualnym przed
+              6.4. Obowiązek sprawdzenia Rejestru Sprawców Przestępstw na Tle Seksualnym przed
               powierzeniem opieki nad dzieckiem, wynikający z przepisów o przeciwdziałaniu
               zagrożeniom przestępczością na tle seksualnym i ochronie małoletnich, może spoczywać
               na osobie organizującej taką opiekę lub powierzającej ją innej osobie. Jak wskazano w
@@ -233,9 +272,9 @@ export default function TermsPage() {
             </P>
           </Section>
 
-          <Section title="§8. Odpowiedzialność">
+          <Section title="§7. Odpowiedzialność">
             <P>
-              8.1. W najszerszym zakresie dopuszczalnym przez obowiązujące przepisy prawa, Operator
+              7.1. W najszerszym zakresie dopuszczalnym przez obowiązujące przepisy prawa, Operator
               nie ponosi odpowiedzialności za:
             </P>
             <Ul
@@ -247,53 +286,44 @@ export default function TermsPage() {
               ]}
             />
             <P>
-              8.2. Postanowień §8.1 nie stosuje się do szkód wyrządzonych Użytkownikowi umyślnie
+              7.2. Postanowień §7.1 nie stosuje się do szkód wyrządzonych Użytkownikowi umyślnie
               przez Operatora ani w innych przypadkach, w których wyłączenie lub ograniczenie
               odpowiedzialności byłoby nieważne na mocy bezwzględnie obowiązujących przepisów
               prawa, w tym art. 473 §2 oraz art. 385<sup>3</sup> Kodeksu cywilnego.
             </P>
             <P>
-              8.3. Odpowiedzialność Operatora wobec Użytkowników za nienależyte świadczenie usługi
-              Serwisu — w tym publikacji opłaconego Ogłoszenia zgodnie z §6 oraz dostępności
-              technicznej Serwisu — jest ograniczona do zakresu dozwolonego przez przepisy prawa
-              powszechnie obowiązującego.
+              7.3. Odpowiedzialność Operatora wobec Użytkowników za nienależyte świadczenie usługi
+              Serwisu — w tym publikacji Ogłoszenia oraz dostępności technicznej Serwisu — jest
+              ograniczona do zakresu dozwolonego przez przepisy prawa powszechnie obowiązującego.
             </P>
           </Section>
 
-          <Section title="§9. Moderacja i blokowanie Kont">
+          <Section title="§8. Moderacja i blokowanie Kont">
             <P>
-              9.1. Operator jest uprawniony, lecz nie zobowiązany, do moderowania, usuwania
+              8.1. Operator jest uprawniony, lecz nie zobowiązany, do moderowania, usuwania
               Ogłoszeń oraz blokowania Kont Użytkowników naruszających Regulamin lub przepisy
               prawa, w tym poprzez oznaczenie Konta jako zablokowane, co uniemożliwia dalsze
               logowanie.
             </P>
             <P>
-              9.2. Podjęcie lub niepodjęcie działań moderacyjnych przez Operatora nie stanowi
+              8.2. Podjęcie lub niepodjęcie działań moderacyjnych przez Operatora nie stanowi
               potwierdzenia ani zaprzeczenia prawdziwości treści Ogłoszenia czy wiarygodności
               Użytkownika i nie rodzi po stronie Operatora odpowiedzialności wobec pozostałych
               Użytkowników.
             </P>
           </Section>
 
-          <Section title="§10. Reklamacje">
+          <Section title="§9. Reklamacje">
             <P>
-              10.1. Reklamacje dotyczące funkcjonowania Serwisu, w tym płatności za publikację
-              Ogłoszenia, można zgłaszać na adres e-mail wskazany w §1.2, podając opis zgłaszanego
-              problemu.
+              9.1. Reklamacje dotyczące funkcjonowania Serwisu można zgłaszać na adres e-mail
+              wskazany w §1.2, podając opis zgłaszanego problemu.
             </P>
-            <P>10.2. Operator rozpatruje reklamacje w terminie 14 dni od dnia ich otrzymania.</P>
-            <P>
-              10.3. Złożenie reklamacji nie jest równoznaczne z przyznaniem zwrotu opłaty za
-              publikację Ogłoszenia — zasady odstąpienia od umowy i zwrotu opłaty określają
-              wyłącznie §6.3–6.4. Reklamacja może natomiast dotyczyć np. nieprawidłowego działania
-              Serwisu, błędu w pobraniu płatności lub niewykonania usługi publikacji przez
-              Operatora.
-            </P>
+            <P>9.2. Operator rozpatruje reklamacje w terminie 14 dni od dnia ich otrzymania.</P>
           </Section>
 
-          <Section title="§11. Dane osobowe">
+          <Section title="§10. Dane osobowe">
             <P>
-              11.1. Administratorem danych osobowych Użytkowników jest Operator. Zasady
+              10.1. Administratorem danych osobowych Użytkowników jest Operator. Zasady
               przetwarzania danych osobowych określa odrębna{' '}
               <Link href="/privacy" className="text-brand-600 underline">
                 Polityka Prywatności
@@ -303,26 +333,26 @@ export default function TermsPage() {
             </P>
           </Section>
 
-          <Section title="§12. Rozwiązanie umowy i usunięcie Konta">
+          <Section title="§11. Rozwiązanie umowy i usunięcie Konta">
             <P>
-              12.1. Użytkownik może w każdej chwili zrezygnować z korzystania z Serwisu i
+              11.1. Użytkownik może w każdej chwili zrezygnować z korzystania z Serwisu i
               samodzielnie usunąć swoje Konto w ustawieniach Konta (Mój profil → Usuń moje konto)
               — usunięcie następuje niezwłocznie i obejmuje profil, zdjęcie oraz wiadomości
               Użytkownika. Jeżeli zalogowanie nie jest możliwe (np. z powodu zablokowania Konta na
-              podstawie §9), żądanie usunięcia można zgłosić na adres wskazany w §1.2 — Operator
+              podstawie §8), żądanie usunięcia można zgłosić na adres wskazany w §1.2 — Operator
               usunie Konto w takim przypadku.
             </P>
             <P>
-              12.2. Operator może usunąć Konto Użytkownika w przypadku rażącego lub uporczywego
+              11.2. Operator może usunąć Konto Użytkownika w przypadku rażącego lub uporczywego
               naruszania Regulaminu, po uprzedniej próbie kontaktu z Użytkownikiem, chyba że
               charakter naruszenia uzasadnia niezwłoczne działanie.
             </P>
           </Section>
 
-          <Section title="§13. Postanowienia końcowe">
-            <P>13.1. Prawem właściwym dla niniejszego Regulaminu jest prawo polskie.</P>
+          <Section title="§12. Postanowienia końcowe">
+            <P>12.1. Prawem właściwym dla niniejszego Regulaminu jest prawo polskie.</P>
             <P>
-              13.2. Konsument ma możliwość skorzystania z pozasądowych sposobów rozpatrywania
+              12.2. Konsument ma możliwość skorzystania z pozasądowych sposobów rozpatrywania
               reklamacji i dochodzenia roszczeń, w tym z platformy ODR Komisji Europejskiej,
               dostępnej pod adresem{' '}
               <a
@@ -336,8 +366,8 @@ export default function TermsPage() {
               .
             </P>
             <P>
-              13.3. Operator może zmienić Regulamin z ważnych przyczyn (zmiana przepisów prawa,
-              zmiana funkcjonalności Serwisu, zmiana cennika). O zmianie Regulaminu Użytkownicy
+              12.3. Operator może zmienić Regulamin z ważnych przyczyn (zmiana przepisów prawa,
+              zmiana funkcjonalności Serwisu). O zmianie Regulaminu Użytkownicy
               zostaną poinformowani z odpowiednim wyprzedzeniem. Do umów i akceptacji dokonanych
               przed zmianą stosuje się Regulamin w wersji obowiązującej w dniu akceptacji.
             </P>
