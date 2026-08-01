@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
 import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
 import { NannyPhoto } from '@/components/NannyPhoto'
 import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
@@ -333,10 +334,10 @@ export default function OnboardingPage() {
           </>
         )}
         {steps[step] === 'Lokalizacja' && (
-          <Input
+          <CityAutocomplete
             label="Lokalizacja (miasto)"
             value={form.location}
-            onChange={(e) => update('location', e.target.value)}
+            onChange={(value) => update('location', value)}
           />
         )}
         {steps[step] === 'Tytuł ogłoszenia' && (

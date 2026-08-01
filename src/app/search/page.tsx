@@ -12,6 +12,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
 import { Card, CardContent } from '@/components/ui/Card'
 import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
 import { formatCurrency } from '@/lib/utils'
@@ -91,11 +92,11 @@ export default function SearchPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="grid gap-4 sm:grid-cols-4">
-                <Input
+                <CityAutocomplete
                   label="Lokalizacja"
                   placeholder="Miasto"
                   value={filters.location ?? ''}
-                  onChange={(e) => setFilters((f) => ({ ...f, location: e.target.value }))}
+                  onChange={(value) => setFilters((f) => ({ ...f, location: value }))}
                 />
                 {!searchingParents && (
                   <Input

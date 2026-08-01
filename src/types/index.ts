@@ -1,6 +1,6 @@
 export type UserRole = 'parent' | 'nanny' | 'admin'
 export type JobType = 'full_time' | 'part_time'
-export type ChildrenAgeRange = '0_3' | '3_6' | '6_plus'
+export type ChildrenAgeRange = 'under_1' | '1_3' | '4_6' | '7_11' | 'over_11'
 
 export interface User {
   id: string
