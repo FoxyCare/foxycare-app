@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { OAuthButtons } from '@/components/auth/OAuthButtons'
+import { Turnstile } from '@/components/auth/Turnstile'
 import { translateAuthError } from '@/lib/utils'
 import { TERMS_VERSION } from '@/lib/legal/terms'
 import type { UserRole } from '@/types'
@@ -24,6 +25,17 @@ export default function RegisterForm() {
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  // Bumped on every submit attempt to force Turnstile to remount — tokens
+  // are single-use, so a failed submit (or one that never reaches Supabase,
+  // e.g. missing terms checkbox) needs a fresh one before retrying.
+  const [captchaResetKey, setCaptchaResetKey] = useState(0)
+  const captchaRequired = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
+  function resetCaptcha() {
+    setCaptchaToken(null)
+    setCaptchaResetKey((k) => k + 1)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -34,20 +46,39 @@ export default function RegisterForm() {
       return
     }
 
+    if (captchaRequired && !captchaToken) {
+      setError('Potwierdź, że nie jesteś robotem.')
+      return
+    }
+
     setIsLoading(true)
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { full_name: fullName, role, terms_version: TERMS_VERSION },
+          captchaToken: captchaToken ?? undefined,
         },
       })
 
       if (error) {
         setError(translateAuthError(error.message))
+        resetCaptcha()
+        return
+      }
+
+      // Supabase deliberately doesn't error here for an already-registered,
+      // confirmed e-mail (anti-enumeration) — it returns a user-shaped
+      // object with no session and an empty identities array instead.
+      // Without this check that looks like success and pushes straight to
+      // /onboarding with no real session, where every save silently fails
+      // because there's no authenticated user behind it.
+      if (data.user && data.user.identities?.length === 0) {
+        setError('Użytkownik o tym adresie e-mail już istnieje')
+        resetCaptcha()
         return
       }
 
@@ -138,6 +169,10 @@ export default function RegisterForm() {
             </span>
           </label>
 
+          {captchaRequired && (
+            <Turnstile key={captchaResetKey} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+          )}
+
           {error && (
             <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
               {error}
@@ -147,7 +182,7 @@ export default function RegisterForm() {
           <Button
             type="submit"
             isLoading={isLoading}
-            disabled={!termsAccepted}
+            disabled={!termsAccepted || (captchaRequired && !captchaToken)}
             className="mt-2 w-full"
           >
             Zarejestruj się
