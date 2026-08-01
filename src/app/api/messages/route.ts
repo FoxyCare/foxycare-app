@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { notifyNewMessage } from '@/lib/email/notifications'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -81,6 +82,19 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Runs after the response is already sent — an outbound e-mail should
+  // never add latency to the sender's own optimistic UI update.
+  after(() =>
+    notifyNewMessage({
+      supabase,
+      conversationId: conversation_id,
+      messageId: data.id,
+      senderName: data.sender?.full_name ?? 'Ktoś',
+      receiverId,
+      origin: new URL(request.url).origin,
+    })
+  )
 
   return NextResponse.json(data, { status: 201 })
 }

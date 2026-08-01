@@ -87,6 +87,12 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <Link
+            href="/forgot-password"
+            className="-mt-2 self-end text-xs font-medium text-brand-600 hover:underline"
+          >
+            Nie pamiętasz hasła?
+          </Link>
 
           {error && (
             <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">

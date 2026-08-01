@@ -40,6 +40,8 @@ const AUTH_ERROR_TRANSLATIONS: Record<string, string> = {
   'Email link is invalid or has expired': 'Link wygasł lub jest nieprawidłowy',
   'For security purposes, you can only request this after some time.':
     'Ze względów bezpieczeństwa możesz spróbować ponownie dopiero za chwilę',
+  'New password should be different from the old password.':
+    'Nowe hasło musi się różnić od poprzedniego',
 }
 
 export const BANNED_ACCOUNT_MESSAGE =
