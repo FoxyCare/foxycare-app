@@ -4,7 +4,23 @@ import { updateSession } from '@/lib/supabase/middleware'
 // /auth/callback must stay public — it's what *establishes* the session
 // (OAuth code exchange), so requiring a session to reach it would make it
 // unreachable for exactly the case it exists for.
-const PUBLIC_ROUTES = ['/', '/login', '/register', '/search', '/terms', '/privacy', '/auth/callback']
+// /auth/confirm (password-recovery code exchange, mirrors /auth/callback's
+// OAuth exchange) and /reset-password must stay public for the same reason
+// /auth/callback does: they're reached before any session cookie exists,
+// so gating them behind auth would redirect the one-time recovery code away
+// before it's ever exchanged.
+const PUBLIC_ROUTES = [
+  '/',
+  '/login',
+  '/register',
+  '/search',
+  '/terms',
+  '/privacy',
+  '/auth/callback',
+  '/auth/confirm',
+  '/forgot-password',
+  '/reset-password',
+]
 const AUTH_ROUTES = ['/login', '/register', '/onboarding']
 
 export async function proxy(request: NextRequest) {
