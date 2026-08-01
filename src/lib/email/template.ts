@@ -18,7 +18,9 @@
 // most of all) don't reliably support modern CSS, flexbox, or <style>
 // blocks the way browsers do.
 
-const LOGO_URL = 'https://foxycare-app-beige.vercel.app/logo-email.png'
+// www. and not the bare domain — foxycare.pl 308-redirects to www., and
+// not every mail client's image proxy follows redirects for embedded images.
+const LOGO_URL = 'https://www.foxycare.pl/logo-email.png'
 
 // brand-600 / brand-700 from tailwind.config.ts — kept as literal hex here
 // since e-mail HTML can't reach into the app's Tailwind config at render
