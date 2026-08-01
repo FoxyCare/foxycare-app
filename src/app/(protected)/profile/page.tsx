@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
 import { CheckboxGroup } from '@/components/ui/CheckboxGroup'
 import { JOB_TYPE_LABEL, AGE_RANGE_LABEL } from '@/lib/labels'
 import { uploadAvatar } from '@/lib/upload/uploadAvatar'
@@ -296,10 +297,10 @@ export default function ProfilePage() {
                 value={user.full_name ?? ''}
                 onChange={(e) => setUser((u) => ({ ...u, full_name: e.target.value }))}
               />
-              <Input
+              <CityAutocomplete
                 label="Lokalizacja"
                 value={roleProfile.location ?? ''}
-                onChange={(e) => setRoleProfile((p) => ({ ...p, location: e.target.value }))}
+                onChange={(value) => setRoleProfile((p) => ({ ...p, location: value }))}
               />
 
               <Input
