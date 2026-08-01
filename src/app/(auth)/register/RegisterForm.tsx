@@ -38,7 +38,7 @@ export default function RegisterForm() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -48,6 +48,17 @@ export default function RegisterForm() {
 
       if (error) {
         setError(translateAuthError(error.message))
+        return
+      }
+
+      // Supabase deliberately doesn't error here for an already-registered,
+      // confirmed e-mail (anti-enumeration) — it returns a user-shaped
+      // object with no session and an empty identities array instead.
+      // Without this check that looks like success and pushes straight to
+      // /onboarding with no real session, where every save silently fails
+      // because there's no authenticated user behind it.
+      if (data.user && data.user.identities?.length === 0) {
+        setError('Użytkownik o tym adresie e-mail już istnieje')
         return
       }
 
