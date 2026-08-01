@@ -49,5 +49,8 @@ export const BANNED_ACCOUNT_MESSAGE =
 
 export function translateAuthError(message: string): string {
   if (/banned/i.test(message)) return BANNED_ACCOUNT_MESSAGE
+  if (/captcha/i.test(message)) {
+    return 'Weryfikacja CAPTCHA wygasła — spróbuj ponownie.'
+  }
   return AUTH_ERROR_TRANSLATIONS[message] ?? message
 }

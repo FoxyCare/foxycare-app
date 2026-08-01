@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { OAuthButtons } from '@/components/auth/OAuthButtons'
+import { Turnstile } from '@/components/auth/Turnstile'
 import { translateAuthError, BANNED_ACCOUNT_MESSAGE } from '@/lib/utils'
 
 export default function LoginForm() {
@@ -25,10 +26,26 @@ export default function LoginForm() {
         : null
   )
   const [isLoading, setIsLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  // Bumped after every attempt to force Turnstile to remount — tokens are
+  // single-use, so a failed login needs a fresh one before retrying.
+  const [captchaResetKey, setCaptchaResetKey] = useState(0)
+  const captchaRequired = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
+  function resetCaptcha() {
+    setCaptchaToken(null)
+    setCaptchaResetKey((k) => k + 1)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (captchaRequired && !captchaToken) {
+      setError('Potwierdź, że nie jesteś robotem.')
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -36,10 +53,12 @@ export default function LoginForm() {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: { captchaToken: captchaToken ?? undefined },
       })
 
       if (error) {
         setError(translateAuthError(error.message))
+        resetCaptcha()
         return
       }
 
@@ -54,6 +73,7 @@ export default function LoginForm() {
       if (profile?.is_banned) {
         await supabase.auth.signOut()
         setError(BANNED_ACCOUNT_MESSAGE)
+        resetCaptcha()
         return
       }
 
@@ -94,13 +114,22 @@ export default function LoginForm() {
             Nie pamiętasz hasła?
           </Link>
 
+          {captchaRequired && (
+            <Turnstile key={captchaResetKey} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+          )}
+
           {error && (
             <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
               {error}
             </p>
           )}
 
-          <Button type="submit" isLoading={isLoading} className="mt-2 w-full">
+          <Button
+            type="submit"
+            isLoading={isLoading}
+            disabled={captchaRequired && !captchaToken}
+            className="mt-2 w-full"
+          >
             Zaloguj się
           </Button>
         </form>
