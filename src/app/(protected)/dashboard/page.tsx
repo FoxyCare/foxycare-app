@@ -71,9 +71,16 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-500">Rozmowy</p>
-            <p className="mt-1 text-3xl font-bold text-gray-900">{conversationCount ?? 0}</p>
+          <CardContent className="flex items-center justify-between gap-4 pt-6">
+            <div>
+              <p className="text-sm text-gray-500">Rozmowy</p>
+              <p className="mt-1 text-3xl font-bold text-gray-900">{conversationCount ?? 0}</p>
+            </div>
+            <Link href="/chat">
+              <Button variant="outline" size="sm">
+                Przejdź do wiadomości
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
