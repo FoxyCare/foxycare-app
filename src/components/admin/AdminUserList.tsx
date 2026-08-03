@@ -181,12 +181,18 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                             Zbanowany
                           </Badge>
                         )}
-                        <Badge
-                          variant={user.profile?.is_published ? 'success' : 'default'}
-                          className="ml-2"
-                        >
-                          {user.profile?.is_published ? 'Opublikowany' : 'Nieopublikowany'}
-                        </Badge>
+                        {user.profile ? (
+                          <Badge
+                            variant={user.profile.is_published ? 'success' : 'default'}
+                            className="ml-2"
+                          >
+                            {user.profile.is_published ? 'Opublikowany' : 'Nieopublikowany'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="danger" className="ml-2">
+                            Nie dokończono rejestracji
+                          </Badge>
+                        )}
                       </p>
                       <p className="truncate text-sm text-gray-500">{user.email}</p>
                       <div className="mt-1 flex flex-wrap gap-1">
@@ -202,14 +208,16 @@ export function AdminUserList({ role }: { role: 'nanny' | 'parent' }) {
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      isLoading={pendingPublishId === user.id}
-                      onClick={() => togglePublish(user)}
-                    >
-                      {user.profile?.is_published ? 'Cofnij publikację' : 'Opublikuj'}
-                    </Button>
+                    {user.profile && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        isLoading={pendingPublishId === user.id}
+                        onClick={() => togglePublish(user)}
+                      >
+                        {user.profile.is_published ? 'Cofnij publikację' : 'Opublikuj'}
+                      </Button>
+                    )}
                     <Button
                       variant={user.is_banned ? 'outline' : 'danger'}
                       size="sm"
